@@ -114,7 +114,7 @@ function SignInPage() {
       <main className="relative w-full max-w-md">
         <div className="text-center mb-8">
           <img src={logo} alt="LegacyNest" className="mx-auto h-24 w-24 object-contain mix-blend-multiply" />
-          <h1 className="mt-4 text-3xl font-bold text-foreground">LegacyNest</h1>
+          <h1 className="mt-4 text-3xl font-bold text-foreground">LegacyNest™</h1>
           <p className="mt-1 text-sm text-muted-foreground">Securing generations, one plan at a time.</p>
         </div>
 

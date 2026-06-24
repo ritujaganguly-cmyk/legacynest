@@ -34,40 +34,40 @@ export const CHAPTERS: Chapter[] = [
     why: "Without a named backup, strangers make decisions for your child.",
   },
   {
-    num: 4, key: "emergency", title: "Emergency Plan",
-    subtitle: "Who acts first and what they must know in 24 hours",
-    route: "/emergency", minutes: 15,
-    why: "The most urgent piece — activate it even if nothing else is ready.",
-  },
-  {
-    num: 5, key: "medical", title: "Medical Records",
+    num: 4, key: "medical", title: "Medical Records",
     subtitle: "Doctors, medications, therapies, appointments",
     route: "/medical", minutes: 15,
     why: "Any caregiver stepping in needs this to keep your child safe.",
   },
   {
-    num: 6, key: "legal", title: "Legal Foundation",
+    num: 5, key: "legal", title: "Legal Foundation",
     subtitle: "Will, Special Needs Trust, guardianship, power of attorney",
     route: "/legal", minutes: 10,
     why: "Without legal documents, courts decide your child's future.",
   },
   {
-    num: 7, key: "financial", title: "Financial Planning",
+    num: 6, key: "financial", title: "Financial Planning",
     subtitle: "Lifetime corpus, assets, insurance, government schemes",
     route: "/financial", minutes: 15,
     why: "Ensure the money outlasts the need — mapped to your child's real costs.",
   },
   {
-    num: 8, key: "residential", title: "Residential Planning",
+    num: 7, key: "residential", title: "Residential Planning",
     subtitle: "Where they will live — primary, backup, and emergency options",
     route: "/residential", minutes: 12,
     why: "Good group homes have 5–10 year waitlists. Apply now.",
   },
   {
-    num: 9, key: "vault", title: "Digital Vault",
+    num: 8, key: "vault", title: "Digital Vault",
     subtitle: "Upload and secure every critical document in one place",
     route: "/vault", minutes: 10,
     why: "Successors need instant access to the right papers at the right time.",
+  },
+  {
+    num: 9, key: "emergency", title: "Emergency Plan",
+    subtitle: "Who acts first and what they must know in 24 hours",
+    route: "/emergency", minutes: 15,
+    why: "With everything documented, now activate your emergency safety net.",
   },
 ];
 

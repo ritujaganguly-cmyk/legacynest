@@ -10,19 +10,21 @@ import logo from "@/assets/LegacyNest_Logo.jpeg";
 import { useSession } from "@/lib/session-store";
 import { dataService } from "@/lib/data/mock";
 
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? "admin@legacynest.co.in";
+
 const NAV_PRIMARY = [
   { to: "/dashboard",         label: "Dashboard",          icon: LayoutGrid },
   { to: "/child-profile",     label: "Child Profile",      icon: Users },
   { to: "/parent-profile",    label: "Parent Profile",     icon: User },
   { to: "/care-circle",       label: "Care Circle",        icon: Users },
   { to: "/caregiver",         label: "Succession Planning",icon: ClipboardList },
-  { to: "/emergency",         label: "Emergency",          icon: AlertTriangle },
   { to: "/medical",           label: "Medical",            icon: HeartPulse },
   { to: "/insurance-policies",label: "Insurance",          icon: Shield },
   { to: "/financial",         label: "Financial",          icon: Landmark },
   { to: "/legal",             label: "Legal",              icon: Scale },
   { to: "/residential",       label: "Residential",        icon: MapPin },
   { to: "/vault",             label: "Digital Vault",      icon: Lock },
+  { to: "/emergency",         label: "Emergency",          icon: AlertTriangle },
   { to: "/support" as "/support", label: "Support",        icon: BookOpen },
 ] as const;
 
@@ -209,7 +211,7 @@ export function AppShell() {
           <Link to="/" className="flex items-center gap-2 min-w-0">
             <img src={logo} alt="LegacyNest" className="h-9 w-9 object-contain shrink-0 mix-blend-multiply" />
             <div className="leading-tight min-w-0">
-              <div className="text-lg font-bold text-primary truncate">LegacyNest</div>
+              <div className="text-lg font-bold text-primary truncate">LegacyNest™</div>
               <div className="text-[11px] text-muted-foreground">Legacy Secured</div>
             </div>
           </Link>
@@ -236,7 +238,7 @@ export function AppShell() {
         </nav>
 
         <div className="px-3 pb-6 pt-4 border-t border-sidebar-border space-y-0.5">
-          {user?.email === "admin@legacynest.co.in" && (
+          {user?.email === ADMIN_EMAIL && (
             <a href="/admin/dashboard" className="sidebar-link flex items-center gap-2 text-primary font-medium">
               <Shield className="h-4 w-4 shrink-0" /> <span className="text-sm">Admin</span>
             </a>

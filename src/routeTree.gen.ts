@@ -11,7 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SignInRouteImport } from './routes/sign-in'
-import { Route as PreviewRouteImport } from './routes/preview'
+import { Route as ReviewRouteImport } from './routes/review'
 import { Route as EmergencyConfirmRouteImport } from './routes/emergency-confirm'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/_app'
@@ -47,9 +47,9 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PreviewRoute = PreviewRouteImport.update({
-  id: '/preview',
-  path: '/preview',
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmergencyConfirmRoute = EmergencyConfirmRouteImport.update({
@@ -176,7 +176,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/emergency-confirm': typeof EmergencyConfirmRoute
-  '/preview': typeof PreviewRoute
+  '/review': typeof ReviewRoute
   '/sign-in': typeof SignInRoute
   '/support': typeof SupportRoute
   '/action-plan': typeof AppActionPlanRoute
@@ -204,7 +204,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/emergency-confirm': typeof EmergencyConfirmRoute
-  '/preview': typeof PreviewRoute
+  '/review': typeof ReviewRoute
   '/sign-in': typeof SignInRoute
   '/support': typeof SupportRoute
   '/action-plan': typeof AppActionPlanRoute
@@ -234,7 +234,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/emergency-confirm': typeof EmergencyConfirmRoute
-  '/preview': typeof PreviewRoute
+  '/review': typeof ReviewRoute
   '/sign-in': typeof SignInRoute
   '/support': typeof SupportRoute
   '/_app/action-plan': typeof AppActionPlanRoute
@@ -264,7 +264,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/emergency-confirm'
-    | '/preview'
+    | '/review'
     | '/sign-in'
     | '/support'
     | '/action-plan'
@@ -292,7 +292,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/emergency-confirm'
-    | '/preview'
+    | '/review'
     | '/sign-in'
     | '/support'
     | '/action-plan'
@@ -321,7 +321,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/admin'
     | '/emergency-confirm'
-    | '/preview'
+    | '/review'
     | '/sign-in'
     | '/support'
     | '/_app/action-plan'
@@ -351,7 +351,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   EmergencyConfirmRoute: typeof EmergencyConfirmRoute
-  PreviewRoute: typeof PreviewRoute
+  ReviewRoute: typeof ReviewRoute
   SignInRoute: typeof SignInRoute
   SupportRoute: typeof SupportRoute
   CTokenRoute: typeof CTokenRoute
@@ -373,11 +373,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/preview': {
-      id: '/preview'
-      path: '/preview'
-      fullPath: '/preview'
-      preLoaderRoute: typeof PreviewRouteImport
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/emergency-confirm': {
@@ -610,7 +610,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   EmergencyConfirmRoute: EmergencyConfirmRoute,
-  PreviewRoute: PreviewRoute,
+  ReviewRoute: ReviewRoute,
   SignInRoute: SignInRoute,
   SupportRoute: SupportRoute,
   CTokenRoute: CTokenRoute,

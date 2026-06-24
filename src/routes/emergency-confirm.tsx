@@ -102,7 +102,7 @@ function EmergencyConfirmPage() {
               within 24 hours before taking any action. Thank you for your care.
             </p>
             <p className="text-xs text-muted-foreground">
-              If you have questions, email us at legacynest.co.in@gmail.com
+              If you have questions, email us at hello@legacynest.co.in
             </p>
           </div>
         ) : step === "error" ? (

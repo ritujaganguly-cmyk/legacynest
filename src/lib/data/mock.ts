@@ -685,15 +685,11 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-      const payload = { ...fromMember(m), user_id: user.id };
-      console.log("Creating care circle member with:", payload);
-      const { data, error } = await supabase.from("care_circle").insert(payload).select().single();
+      const payload = { ...fromMember(m), user_id: user.id };      const { data, error } = await supabase.from("care_circle").insert(payload).select().single();
       if (error) {
         console.error("Supabase error:", error);
         throw error;
-      }
-      console.log("Created member:", data);
-      return toMember(data as CareRow);
+      }      return toMember(data as CareRow);
     }, null as CareCircleMember | null);
   },
   async updateCareCircleMember(m: CareCircleMember) {
@@ -1754,9 +1750,7 @@ export const dataService = {
 
   async getVaultFileSignedUrl(storagePath: string): Promise<string | null> {
     return safe(async () => {
-      const cleanPath = storagePath.replace(/^vault-documents\//, "");
-      console.log("[vault] generating signed URL for path:", cleanPath);
-      const { data, error } = await supabase.storage
+      const cleanPath = storagePath.replace(/^vault-documents\//, "");      const { data, error } = await supabase.storage
         .from("vault-documents")
         .createSignedUrl(cleanPath, 60 * 60);
       if (error) { console.error("[vault] signed URL error:", error); throw error; }

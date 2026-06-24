@@ -259,17 +259,12 @@ function MedicalRecordsTab() {
         // Upload file to vault if one was selected and status is "done"
         if (selectedFile && (markingDone === "done" || editing?.status === "done")) {
           try {
-            setUploadingFile(true);
-            console.log("Uploading file:", selectedFile.name, "to medical record:", editing.id);
-            const uploadResult = await dataService.uploadVaultFile(selectedFile, editing.id);
+            setUploadingFile(true);            const uploadResult = await dataService.uploadVaultFile(selectedFile, editing.id);
             if (!uploadResult) {
               toast.error("Failed to upload document to vault - no URL returned");
               setSaving(false);
               return;
             }
-
-            console.log("File uploaded successfully:", uploadResult);
-
             // Extract the storage path from the upload result URL
             // URL format: https://...supabase.co/storage/v1/object/public/vault-documents/user_id/record_id/timestamp_filename
             const pathMatch = uploadResult.match(/\/public\/(.+?)(?:\?|$)/);

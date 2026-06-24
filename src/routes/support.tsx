@@ -133,7 +133,7 @@ function ContactModal({
     if (ok) {
       setDone(true);
     } else {
-      toast.error("Could not submit. Please email us directly at legacynest.co.in@gmail.com");
+      toast.error("Could not submit. Please email us directly at hello@legacynest.co.in");
     }
   }
 
@@ -315,11 +315,11 @@ function SupportPublicPage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
             <a
-              href="mailto:legacynest.co.in@gmail.com"
+              href="mailto:hello@legacynest.co.in"
               className="inline-flex items-center gap-2 rounded-xl border border-border bg-[#fdf6ee] hover:border-primary px-5 py-3 text-sm font-semibold text-foreground transition-colors"
             >
               <Mail className="h-4 w-4 text-primary" />
-              legacynest.co.in@gmail.com
+              hello@legacynest.co.in
             </a>
             <a
               href="https://wa.me/917044063379"

@@ -1,4 +1,4 @@
-Ôªøimport { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { ChapterBanner } from "@/components/ChapterBanner";
@@ -116,12 +116,13 @@ function LegalPage() {
   return (
     <div className="space-y-4 max-w-4xl">
       <ChapterBanner chapterKey="legal" />
+      <SPDINotice section="legal" />
       <div>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Scale className="h-6 w-6 text-primary" /> Legal Planning and Asset Protection
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Indian Succession Act ¬∑ Guardians and Wards Act 1890 ¬∑ RPWD Act 2016
+          Indian Succession Act ∑ Guardians and Wards Act 1890 ∑ RPWD Act 2016
         </p>
       </div>
 
@@ -269,7 +270,7 @@ function LegalPage() {
               {key === "guardianship" && (
                 <>
                   {childUnder18 ? (
-                    /* Under 18 ‚Äî show note, no form */
+                    /* Under 18 ó show note, no form */
                     <div className="rounded-xl bg-amber-50 border border-amber-200 p-5">
                       <div className="flex items-start gap-3">
                         <BookOpen className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
@@ -277,7 +278,7 @@ function LegalPage() {
                           <h4 className="font-semibold text-amber-900">Not applicable yet</h4>
                           <p className="text-sm text-amber-800 mt-1">
                             Legal Guardianship under RPWD Act 2016 is applicable <strong>only after your child turns 18</strong>.{" "}
-                            {childAge !== null && <span>{childName || "Your child"} is currently <strong>{childAge} years old</strong> ‚Äî {yearsUntil18} year{yearsUntil18 !== 1 ? "s" : ""} to go.</span>}
+                            {childAge !== null && <span>{childName || "Your child"} is currently <strong>{childAge} years old</strong> ó {yearsUntil18} year{yearsUntil18 !== 1 ? "s" : ""} to go.</span>}
                           </p>
                           <p className="text-sm text-amber-800 mt-2">
                             However, you should <strong>start planning now</strong>. Read the step-by-step guidance below so you are ready when the time comes.
@@ -290,7 +291,7 @@ function LegalPage() {
                           ["01","Choose the right law","RPWD Act 2016 Section 14 (Limited or Plenary Guardianship) applies after age 18. Start researching now."],
                           ["02","Consult a disability lawyer","Contact National Trust (www.thenationaltrust.gov.in) or your District Legal Services Authority (DLSA) for referrals."],
                           ["03","Prepare documents","Gather: UDID card, birth certificate, medical certificate from govt doctor, your ID + address proof."],
-                          ["04","File petition after 18","File in the District Court or designated authority under RPWD Act. Timeline: 3‚Äì6 months for an uncontested petition."],
+                          ["04","File petition after 18","File in the District Court or designated authority under RPWD Act. Timeline: 3ñ6 months for an uncontested petition."],
                         ] as [string,string,string][]).map(([step,title,body])=>(
                           <div key={step} className="rounded-lg bg-white border border-amber-200 p-3">
                             <div className="flex items-center gap-2 mb-1">
@@ -303,7 +304,7 @@ function LegalPage() {
                       </div>
                     </div>
                   ) : (
-                    /* 18+ ‚Äî show form + guidance */
+                    /* 18+ ó show form + guidance */
                     <>
                       <div className={G2}>
                         <div><label className={LABEL}>Guardianship Status</label>
@@ -359,9 +360,9 @@ function LegalPage() {
                           <div className="grid sm:grid-cols-2 gap-3">
                             {([
                               ["01","File under RPWD Act 2016","Section 14 allows 'Limited' or 'Plenary' guardianship. File a petition in the District Court."],
-                              ["02","Documents needed","UDID card ¬∑ Birth certificate ¬∑ Medical certificate (govt doctor) ¬∑ Proposed guardian's ID + address proof ¬∑ Affidavit"],
-                              ["03","Court process","The court conducts an inquiry. Uncontested petitions typically take 3‚Äì6 months. Engage a disability lawyer."],
-                              ["04","After the order","Upload to Digital Vault ¬∑ Update status to Active above ¬∑ Record court order reference and renewal date"],
+                              ["02","Documents needed","UDID card ∑ Birth certificate ∑ Medical certificate (govt doctor) ∑ Proposed guardian's ID + address proof ∑ Affidavit"],
+                              ["03","Court process","The court conducts an inquiry. Uncontested petitions typically take 3ñ6 months. Engage a disability lawyer."],
+                              ["04","After the order","Upload to Digital Vault ∑ Update status to Active above ∑ Record court order reference and renewal date"],
                             ] as [string,string,string][]).map(([step,title,body])=>(
                               <div key={step} className="rounded-lg bg-white border border-amber-200 p-3">
                                 <div className="flex items-center gap-2 mb-1">
@@ -372,7 +373,7 @@ function LegalPage() {
                               </div>
                             ))}
                           </div>
-                          <p className="text-xs text-amber-700">Resources: <span className="font-medium">National Trust</span> (www.thenationaltrust.gov.in) ¬∑ District Legal Services Authority (DLSA) ¬∑ State Commissioner for Persons with Disabilities</p>
+                          <p className="text-xs text-amber-700">Resources: <span className="font-medium">National Trust</span> (www.thenationaltrust.gov.in) ∑ District Legal Services Authority (DLSA) ∑ State Commissioner for Persons with Disabilities</p>
                         </div>
                       )}
                     </>
@@ -454,7 +455,7 @@ function LegalPage() {
               {/* Disclaimer under generate buttons */}
               {(key === "will" || key === "trust" || (key === "poa" && poaDraft.hasPoa)) && (
                 <p className="text-xs text-muted-foreground italic">
-                  ‚ö†Ô∏è Generated documents are draft templates only. They are not legally binding without review, signing formalities, and registration by a qualified lawyer.
+                  ?? Generated documents are draft templates only. They are not legally binding without review, signing formalities, and registration by a qualified lawyer.
                 </p>
               )}
             </div>

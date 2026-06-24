@@ -1278,6 +1278,7 @@ function Medical() {
   return (
     <div className="space-y-12">
       <ChapterBanner chapterKey="medical" />
+      <SPDINotice section="medical" />
       {/* Header with Stats */}
       <div className="space-y-4">
         {/* Title Section */}

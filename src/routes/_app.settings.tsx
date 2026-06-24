@@ -1,10 +1,11 @@
 import type React from "react";
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Bell, Fingerprint, KeyRound, LogOut, Shield, Smartphone, UserCircle } from "lucide-react";
+import { Bell, Fingerprint, KeyRound, LogOut, Shield, Smartphone, UserCircle, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/lib/session-store";
 import { dataService } from "@/lib/data/mock";
+import { DataRights } from "@/components/compliance/DataRights";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Account & Security — LegacyNest" }] }),
@@ -134,6 +135,12 @@ function SettingsPage() {
           label="Caregiver activity"
           desc="Get notified when a caregiver updates a record."
         />
+      </Section>
+
+      <Section title="Data & Privacy" icon={ShieldCheck}>
+        <div className="py-4">
+          <DataRights />
+        </div>
       </Section>
 
       <button

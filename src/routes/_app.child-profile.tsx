@@ -161,6 +161,7 @@ function ChildProfilePage() {
   return (
     <div className="space-y-8 max-w-4xl">
       <ChapterBanner chapterKey="child" />
+      <SPDINotice section="child_profile" />
       <div className="pb-6 border-b border-border">
         <div className="flex items-start gap-4">
           {userId ? (

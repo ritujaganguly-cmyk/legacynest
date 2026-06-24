@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { dataService, type DisabilityDocument } from "@/lib/data/mock";
+import { MaskedField } from "@/components/compliance/MaskedField";
+import { maskAadhaar, maskAccountNumber } from "@/lib/compliance";
 
 export const Route = createFileRoute("/_app/disability-documents")({
   head: () => ({ meta: [{ title: "Disability Documents — LegacyNest" }] }),
@@ -124,6 +126,7 @@ function DisabilityDocumentsPage() {
           Track UDID card, disability certificate, and expiry dates for government benefits and schemes.
         </p>
       </div>
+      <SPDINotice section="disability_documents" />
 
       {/* Alerts */}
       {expiredDocs.length > 0 && (
@@ -205,7 +208,11 @@ function DisabilityDocumentsPage() {
                     )}
                     {doc.udidNumber && (
                       <div>
-                        UDID: <strong className="font-mono">{doc.udidNumber}</strong>
+                        <MaskedField
+                          label="UDID"
+                          maskedValue={maskAccountNumber(doc.udidNumber)}
+                          revealedValue={doc.udidNumber}
+                        />
                       </div>
                     )}
                     {doc.certificateNumber && (

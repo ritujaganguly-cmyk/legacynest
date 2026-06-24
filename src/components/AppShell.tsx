@@ -141,6 +141,9 @@ function useAlerts(loggedIn: boolean) {
 }
 
 // ── Main AppShell ────────────────────────────────────────────────────────────
+import { ConsentGate } from "@/components/compliance/ConsentGate";
+import { hasAcknowledgedPrivacy } from "@/lib/compliance";
+
 export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
@@ -149,10 +152,19 @@ export function AppShell() {
   const [childName, setChildName] = useState<string>("");
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [needsConsent, setNeedsConsent] = useState(false);
 
   useEffect(() => {
     if (hydrated && !user) navigate({ to: "/sign-in" });
   }, [hydrated, user, navigate]);
+
+  // Check consent after login
+  useEffect(() => {
+    if (!user || consentChecked) return;
+    setConsentChecked(true);
+    hasAcknowledgedPrivacy().then(ack => { if (!ack) setNeedsConsent(true); });
+  }, [user, consentChecked]);
 
   useEffect(() => {
     if (user) dataService.getChildProfile().then(p => { if (p?.name) setChildName(p.name); });
@@ -180,6 +192,10 @@ export function AppShell() {
       .slice(0, 2)
       .join("")
       .toUpperCase() ?? "·";
+
+  if (needsConsent) {
+    return <ConsentGate onAccepted={() => setNeedsConsent(false)} />;
+  }
 
   return (
     <div className="min-h-screen flex bg-surface-low">

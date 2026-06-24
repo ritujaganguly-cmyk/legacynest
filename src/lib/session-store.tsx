@@ -7,7 +7,7 @@ import {
   useReducer,
   type ReactNode,
 } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, pdb } from "@/integrations/supabase/client";
 
 /**
  * Session + onboarding store, backed by Supabase auth.
@@ -207,7 +207,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "COMPLETE_ONBOARDING" });
     const ob = state.onboarding;
     const { data: authData } = await supabase.auth.getSession();
-    const { error } = await supabase.from("child_profiles").upsert(
+    const { error } = await pdb.from("child_profiles").upsert(
       {
         user_id: authData.session?.user?.id,
         full_name: ob.child.fullName,

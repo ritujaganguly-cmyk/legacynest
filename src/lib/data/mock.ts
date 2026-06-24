@@ -4,7 +4,7 @@
  * in try/catch and return safe fallbacks so the UI never crashes on a
  * missing object or invalid UUID reference.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, pdb } from "@/integrations/supabase/client";
 
 export type VaultDocument = {
   id: string;
@@ -885,7 +885,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await supabase.from("emergency_plan").select("*").eq("user_id", user.id).single();
+      const { data } = await pdb.from("emergency_plan").select("*").eq("user_id", user.id).single();
       if (!data) return null;
       const r = data as Record<string, unknown>;
       return {
@@ -917,7 +917,7 @@ export const dataService = {
       if (p.activatedBy !== undefined)             patch.activated_by = p.activatedBy;
       if (p.breakGlassInstructions !== undefined)  patch.break_glass_instructions = p.breakGlassInstructions;
       if (p.financialBridgeNotes !== undefined)    patch.financial_bridge_notes = p.financialBridgeNotes;
-      const { error } = await supabase.from("emergency_plan").upsert(patch, { onConflict: "user_id" });
+      const { error } = await pdb.from("emergency_plan").upsert(patch, { onConflict: "user_id" });
       if (error) throw error;
       return true;
     }, false);
@@ -928,7 +928,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await supabase.from("emergency_institutions").select("*").eq("user_id", user.id).order("created_at");
+      const { data, error } = await pdb.from("emergency_institutions").select("*").eq("user_id", user.id).order("created_at");
       if (error) throw error;
       return (data ?? []).map((r: Record<string, unknown>) => ({
         id: r.id as string, orgName: r.org_name as string,
@@ -941,7 +941,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("emergency_institutions").insert({
+      const { data, error } = await pdb.from("emergency_institutions").insert({
         user_id: user.id, org_name: inst.orgName, contact: inst.contact ?? null,
         what_to_tell: inst.whatToTell ?? null, is_notified: inst.isNotified,
       }).select().single();
@@ -953,14 +953,14 @@ export const dataService = {
   },
   async toggleEmergencyInstitution(id: string, notified: boolean): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("emergency_institutions").update({ is_notified: notified }).eq("id", id);
+      const { error } = await pdb.from("emergency_institutions").update({ is_notified: notified }).eq("id", id);
       if (error) throw error;
       return true;
     }, false);
   },
   async deleteEmergencyInstitution(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("emergency_institutions").delete().eq("id", id);
+      const { error } = await pdb.from("emergency_institutions").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -1041,7 +1041,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await supabase.from("residential_options").select("id").eq("user_id", user.id).limit(1);
+      const { data, error } = await pdb.from("residential_options").select("id").eq("user_id", user.id).limit(1);
       if (error) throw error;
       return (data ?? []).map((r: { id: string }) => ({
         id: r.id, name: "", address: "", legalStatus: "", accessibility: "",
@@ -1050,7 +1050,7 @@ export const dataService = {
   },
   async setPropertyStrategy(id: string, strategy: ResidentialProperty["propertyStrategy"]) {
     return safe(async () => {
-      const { error } = await supabase.from("residential_options").update({ property_strategy: strategy }).eq("id", id);
+      const { error } = await pdb.from("residential_options").update({ property_strategy: strategy }).eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -1061,7 +1061,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await supabase.from("residential_options").select("*").eq("user_id", user.id).order("created_at");
+      const { data, error } = await pdb.from("residential_options").select("*").eq("user_id", user.id).order("created_at");
       if (error) throw error;
       return (data ?? []).map((r: Record<string, unknown>) => ({
         id: r.id as string, userId: r.user_id as string,
@@ -1093,7 +1093,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("residential_options").insert({
+      const { data, error } = await pdb.from("residential_options").insert({
         user_id: user.id, name: opt.name, option_type: opt.optionType,
         address: opt.address ?? null, city: opt.city ?? null,
         monthly_cost: opt.monthlyCost ?? null,
@@ -1142,14 +1142,14 @@ export const dataService = {
       if (opt.hasConsent !== undefined)        patch.has_consent = opt.hasConsent;
       if (opt.hasKeysAccess !== undefined)     patch.has_keys_access = opt.hasKeysAccess;
       if (opt.notes !== undefined)             patch.notes = opt.notes;
-      const { error } = await supabase.from("residential_options").update(patch).eq("id", id);
+      const { error } = await pdb.from("residential_options").update(patch).eq("id", id);
       if (error) throw error;
       return true;
     }, false);
   },
   async deleteResidentialOption(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("residential_options").delete().eq("id", id);
+      const { error } = await pdb.from("residential_options").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -1160,7 +1160,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      let q = supabase.from("residential_checklist").select("*").eq("user_id", user.id);
+      let q = pdb.from("residential_checklist").select("*").eq("user_id", user.id);
       if (optionId) q = q.eq("option_id", optionId);
       else q = q.is("option_id", null);
       const { data, error } = await q.order("created_at");
@@ -1178,7 +1178,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("residential_checklist").insert({
+      const { data, error } = await pdb.from("residential_checklist").insert({
         user_id: user.id, item: item.item, category: item.category,
         option_id: item.optionId ?? null, is_done: item.isDone, notes: item.notes ?? null,
       }).select().single();
@@ -1190,14 +1190,14 @@ export const dataService = {
   },
   async toggleResidentialChecklistItem(id: string, done: boolean): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("residential_checklist").update({ is_done: done }).eq("id", id);
+      const { error } = await pdb.from("residential_checklist").update({ is_done: done }).eq("id", id);
       if (error) throw error;
       return true;
     }, false);
   },
   async deleteResidentialChecklistItem(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("residential_checklist").delete().eq("id", id);
+      const { error } = await pdb.from("residential_checklist").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -1208,7 +1208,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await supabase.from("residential_letter_of_intent").select("*").eq("user_id", user.id).single();
+      const { data } = await pdb.from("residential_letter_of_intent").select("*").eq("user_id", user.id).single();
       if (!data) return null;
       const r = data as Record<string, unknown>;
       return {
@@ -1229,7 +1229,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { error } = await supabase.from("residential_letter_of_intent").upsert({
+      const { error } = await pdb.from("residential_letter_of_intent").upsert({
         user_id: user.id,
         daily_routine: loi.dailyRoutine ?? null, comfort_items: loi.comfortItems ?? null,
         food_preferences: loi.foodPreferences ?? null, sleep_routine: loi.sleepRoutine ?? null,
@@ -1309,7 +1309,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("medications").select("*").eq("user_id", user.id).order("created_at");
+      const { data, error } = await pdb.from("medications").select("*").eq("user_id", user.id).order("created_at");
       if (error) throw error;
       return (data ?? []).map((r: { id: string; name: string; dose: string | null; frequency: string | null; till_date: string | null; notes: string | null }) => ({
         id: r.id, name: r.name, dose: r.dose ?? "", frequency: r.frequency ?? "", tillDate: r.till_date ?? "", notes: r.notes ?? "",
@@ -1320,7 +1320,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("medications")
+      const { data, error } = await pdb.from("medications")
         .insert({ user_id: user.id, name: m.name, dose: m.dose, frequency: m.frequency, till_date: m.tillDate, notes: m.notes })
         .select().single();
       if (error) throw error;
@@ -1332,7 +1332,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("medications")
+      const { data, error } = await pdb.from("medications")
         .update({ name: m.name, dose: m.dose, frequency: m.frequency, till_date: m.tillDate, notes: m.notes })
         .eq("id", m.id).eq("user_id", user.id).select().single();
       if (error) throw error;
@@ -1342,7 +1342,7 @@ export const dataService = {
   },
   async deleteMedication(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("medications").delete().eq("id", id);
+      const { error } = await pdb.from("medications").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -1353,7 +1353,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await supabase.from("health_contacts").select("*").eq("user_id", user.id).order("created_at");
+      const { data, error } = await pdb.from("health_contacts").select("*").eq("user_id", user.id).order("created_at");
       if (error) throw error;
       return (data ?? []).map((r: { id: string; name: string; role: string | null; facility: string | null; phone: string | null; is_primary: boolean | null; initials: string | null }) => ({
         id: r.id, name: r.name, role: r.role ?? "", facility: r.facility ?? "",
@@ -1365,7 +1365,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("health_contacts")
+      const { data, error } = await pdb.from("health_contacts")
         .insert({ user_id: user.id, name: c.name, role: c.role, facility: c.facility, phone: c.phone, is_primary: c.isPrimary, initials: c.initials })
         .select().single();
       if (error) throw error;
@@ -1375,7 +1375,7 @@ export const dataService = {
   },
   async updateHealthContact(c: HealthContact): Promise<HealthContact | null> {
     return safe(async () => {
-      const { data, error } = await supabase.from("health_contacts")
+      const { data, error } = await pdb.from("health_contacts")
         .update({ name: c.name, role: c.role, facility: c.facility, phone: c.phone, is_primary: c.isPrimary, initials: c.initials })
         .eq("id", c.id).select().single();
       if (error) throw error;
@@ -1385,7 +1385,7 @@ export const dataService = {
   },
   async deleteHealthContact(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("health_contacts").delete().eq("id", id);
+      const { error } = await pdb.from("health_contacts").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -1396,7 +1396,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await supabase.from("therapies").select("*").eq("user_id", user.id).order("created_at");
+      const { data, error } = await pdb.from("therapies").select("*").eq("user_id", user.id).order("created_at");
       if (error) throw error;
       return (data ?? []).map((r: { id: string; name: string; specialty: string | null; therapist_name: string | null; therapist_role: string | null; next_session: string | null; status: string | null }) => ({
         id: r.id, name: r.name, specialty: r.specialty ?? "", therapistName: r.therapist_name ?? "",
@@ -1409,7 +1409,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("therapies")
+      const { data, error } = await pdb.from("therapies")
         .insert({ user_id: user.id, name: t.name, specialty: t.specialty, therapist_name: t.therapistName, therapist_role: t.therapistRole, next_session: t.nextSession, status: t.status ?? null })
         .select().single();
       if (error) throw error;
@@ -1419,7 +1419,7 @@ export const dataService = {
   },
   async updateTherapy(t: Therapy): Promise<Therapy | null> {
     return safe(async () => {
-      const { data, error } = await supabase.from("therapies")
+      const { data, error } = await pdb.from("therapies")
         .update({ name: t.name, specialty: t.specialty, therapist_name: t.therapistName, therapist_role: t.therapistRole, next_session: t.nextSession, status: t.status ?? null })
         .eq("id", t.id).select().single();
       if (error) throw error;
@@ -1429,7 +1429,7 @@ export const dataService = {
   },
   async deleteTherapy(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("therapies").delete().eq("id", id);
+      const { error } = await pdb.from("therapies").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -1438,7 +1438,7 @@ export const dataService = {
   /* MEDICAL RECORDS */
   async listMedicalRecords(): Promise<MedicalRecord[]> {
     return safe(async () => {
-      const { data, error } = await supabase.from("medical_records").select("*").order("created_at", { ascending: false });
+      const { data, error } = await pdb.from("medical_records").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map((r: { id: string; title: string; category: string | null; doctor: string | null; record_date: string | null; next_appointment: string | null; status: string | null }) => ({
         id: r.id, title: r.title, category: r.category ?? "", doctor: r.doctor ?? "", recordDate: r.record_date ?? "", nextAppointment: r.next_appointment ?? "", status: r.status as "done" | "not_done" | undefined,
@@ -1449,7 +1449,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("medical_records")
+      const { data, error } = await pdb.from("medical_records")
         .insert({ user_id: user.id, title: rec.title, category: rec.category, doctor: rec.doctor, record_date: rec.recordDate, next_appointment: rec.nextAppointment, status: rec.status })
         .select().single();
       if (error) throw error;
@@ -1461,7 +1461,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data, error } = await supabase.from("medical_records")
+      const { data, error } = await pdb.from("medical_records")
         .update({ title: rec.title, category: rec.category, doctor: rec.doctor, record_date: rec.recordDate, next_appointment: rec.nextAppointment, status: rec.status })
         .eq("id", rec.id)
         .eq("user_id", user.id)
@@ -1473,7 +1473,7 @@ export const dataService = {
   },
   async deleteMedicalRecord(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("medical_records").delete().eq("id", id);
+      const { error } = await pdb.from("medical_records").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -1484,7 +1484,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await supabase.from("legal_will").select("will_status").eq("user_id", user.id).single();
+      const { data } = await pdb.from("legal_will").select("will_status").eq("user_id", user.id).single();
       if (!data) return null;
       return { primaryExecutor: "", alternateExecutor: "", willStatus: (data as Record<string,string>).will_status ?? "",
         trustStatus: "", guardianName: "", courtOrderRef: "", beneficiaryName: "", trustType: "" };
@@ -1497,7 +1497,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await supabase.from("legal_will").select("*").eq("user_id", user.id).single();
+      const { data } = await pdb.from("legal_will").select("*").eq("user_id", user.id).single();
       if (!data) return null;
       const r = data as Record<string, unknown>;
       return {
@@ -1521,7 +1521,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { error } = await supabase.from("legal_will").upsert({
+      const { error } = await pdb.from("legal_will").upsert({
         user_id: user.id, will_status: w.willStatus,
         primary_executor_name: w.primaryExecutorName ?? null, primary_executor_phone: w.primaryExecutorPhone ?? null, primary_executor_email: w.primaryExecutorEmail ?? null,
         alternate_executor_name: w.alternateExecutorName ?? null, alternate_executor_phone: w.alternateExecutorPhone ?? null, alternate_executor_email: w.alternateExecutorEmail ?? null,
@@ -1539,7 +1539,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await supabase.from("legal_trust").select("*").eq("user_id", user.id).single();
+      const { data } = await pdb.from("legal_trust").select("*").eq("user_id", user.id).single();
       if (!data) return null;
       const r = data as Record<string, unknown>;
       return {
@@ -1559,7 +1559,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { error } = await supabase.from("legal_trust").upsert({
+      const { error } = await pdb.from("legal_trust").upsert({
         user_id: user.id, trust_name: t.trustName ?? null, trust_type: t.trustType ?? null, trust_status: t.trustStatus,
         registration_number: t.registrationNumber ?? null, registration_date: t.registrationDate ?? null,
         beneficiary_name: t.beneficiaryName ?? null, pan_number: t.panNumber ?? null,
@@ -1579,7 +1579,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await supabase.from("legal_guardianship").select("*").eq("user_id", user.id).single();
+      const { data } = await pdb.from("legal_guardianship").select("*").eq("user_id", user.id).single();
       if (!data) return null;
       const r = data as Record<string, unknown>;
       return {
@@ -1597,7 +1597,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { error } = await supabase.from("legal_guardianship").upsert({
+      const { error } = await pdb.from("legal_guardianship").upsert({
         user_id: user.id, guardianship_status: g.guardianshipStatus,
         guardian_name: g.guardianName ?? null, guardian_phone: g.guardianPhone ?? null,
         guardian_relationship: g.guardianRelationship ?? null, guardianship_type: g.guardianshipType ?? null,
@@ -1616,7 +1616,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await supabase.from("legal_poa").select("*").eq("user_id", user.id).single();
+      const { data } = await pdb.from("legal_poa").select("*").eq("user_id", user.id).single();
       if (!data) return null;
       const r = data as Record<string, unknown>;
       return {
@@ -1631,7 +1631,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { error } = await supabase.from("legal_poa").upsert({
+      const { error } = await pdb.from("legal_poa").upsert({
         user_id: user.id, has_poa: p.hasPoa,
         holder_name: p.holderName ?? null, holder_phone: p.holderPhone ?? null,
         poa_scope: p.poaScope ?? null, execution_date: p.executionDate ?? null,
@@ -1711,7 +1711,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data, error } = await supabase.from("digital_vault_documents")
+      const { data, error } = await pdb.from("digital_vault_documents")
         .insert({
           user_id: user.id,
           child_id: null,
@@ -1738,7 +1738,7 @@ export const dataService = {
       if (patch.category !== undefined) update.category = patch.category;
       if (patch.status !== undefined) update.verification_status = patch.status;
       if (patch.notes !== undefined) update.notes = patch.notes;
-      const { error } = await supabase.from("digital_vault_documents").update(update).eq("id", id);
+      const { error } = await pdb.from("digital_vault_documents").update(update).eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -1746,7 +1746,7 @@ export const dataService = {
 
   async deleteVaultDocument(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("digital_vault_documents").delete().eq("id", id);
+      const { error } = await pdb.from("digital_vault_documents").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -1769,7 +1769,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data, error } = await supabase.from("parent_profile").select("*").eq("user_id", user.id).single();
+      const { data, error } = await pdb.from("parent_profile").select("*").eq("user_id", user.id).single();
       if (error && error.code === "PGRST116") return null;
       if (error) throw error;
       return {
@@ -1801,7 +1801,7 @@ export const dataService = {
         notes: profile.notes || null,
       };
 
-      const { data, error } = await supabase.from("parent_profile")
+      const { data, error } = await pdb.from("parent_profile")
         .upsert(payload, { onConflict: "user_id" })
         .select()
         .single();
@@ -1826,7 +1826,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await supabase.from("disability_documents").select("*").eq("user_id", user.id);
+      const { data, error } = await pdb.from("disability_documents").select("*").eq("user_id", user.id);
       if (error) throw error;
       return data as DisabilityDocument[];
     }, []);
@@ -1835,7 +1835,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("disability_documents")
+      const { data, error } = await pdb.from("disability_documents")
         .insert({ user_id: user.id, ...doc })
         .select().single();
       if (error) throw error;
@@ -1844,7 +1844,7 @@ export const dataService = {
   },
   async updateDisabilityDocument(id: string, doc: Partial<Omit<DisabilityDocument, "id" | "userId">>): Promise<DisabilityDocument | null> {
     return safe(async () => {
-      const { data, error } = await supabase.from("disability_documents")
+      const { data, error } = await pdb.from("disability_documents")
         .update(doc)
         .eq("id", id)
         .select().single();
@@ -1854,7 +1854,7 @@ export const dataService = {
   },
   async deleteDisabilityDocument(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("disability_documents").delete().eq("id", id);
+      const { error } = await pdb.from("disability_documents").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -1889,7 +1889,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("financial_assets")
+      const { data, error } = await pdb.from("financial_assets")
         .insert({
           user_id: user.id,
           asset_name: asset.assetName,
@@ -1929,7 +1929,7 @@ export const dataService = {
       if (asset.maturityDate !== undefined)           patch.maturity_date = asset.maturityDate;
       if (asset.annualReturnPercentage !== undefined) patch.annual_return_percentage = asset.annualReturnPercentage;
       if (asset.notes !== undefined)                  patch.notes = asset.notes;
-      const { data, error } = await supabase.from("financial_assets")
+      const { data, error } = await pdb.from("financial_assets")
         .update(patch).eq("id", id).select().single();
       if (error) throw error;
       const r = data as Record<string, unknown>;
@@ -1943,7 +1943,7 @@ export const dataService = {
   },
   async deleteFinancialAsset(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("financial_assets").delete().eq("id", id);
+      const { error } = await pdb.from("financial_assets").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -1954,7 +1954,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await supabase.from("financial_expenses").select("*").eq("user_id", user.id).order("created_at");
+      const { data, error } = await pdb.from("financial_expenses").select("*").eq("user_id", user.id).order("created_at");
       if (error) throw error;
       return (data ?? []).map((r: Record<string, unknown>) => ({
         id: r.id as string, userId: r.user_id as string, name: r.name as string,
@@ -1967,7 +1967,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("financial_expenses")
+      const { data, error } = await pdb.from("financial_expenses")
         .insert({ user_id: user.id, name: row.name, category: row.category,
           monthly_amount: row.monthlyAmount, inflation_rate: row.inflationRate, phase3_only: row.phase3Only })
         .select().single();
@@ -1986,14 +1986,14 @@ export const dataService = {
       if (row.monthlyAmount !== undefined) patch.monthly_amount = row.monthlyAmount;
       if (row.inflationRate !== undefined) patch.inflation_rate = row.inflationRate;
       if (row.phase3Only !== undefined) patch.phase3_only = row.phase3Only;
-      const { error } = await supabase.from("financial_expenses").update(patch).eq("id", id);
+      const { error } = await pdb.from("financial_expenses").update(patch).eq("id", id);
       if (error) throw error;
       return true;
     }, false);
   },
   async deleteFinancialExpense(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("financial_expenses").delete().eq("id", id);
+      const { error } = await pdb.from("financial_expenses").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -2004,7 +2004,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await supabase.from("financial_income").select("*").eq("user_id", user.id).order("created_at");
+      const { data, error } = await pdb.from("financial_income").select("*").eq("user_id", user.id).order("created_at");
       if (error) throw error;
       return (data ?? []).map((r: Record<string, unknown>) => ({
         id: r.id as string, userId: r.user_id as string, name: r.name as string,
@@ -2018,7 +2018,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("financial_income")
+      const { data, error } = await pdb.from("financial_income")
         .insert({ user_id: user.id, name: row.name, income_type: row.incomeType,
           monthly_amount: row.monthlyAmount, increment_rate: row.incrementRate,
           survives_parents: row.survivesParents, ends_at_retirement: row.endsAtRetirement })
@@ -2040,14 +2040,14 @@ export const dataService = {
       if (row.incrementRate !== undefined) patch.increment_rate = row.incrementRate;
       if (row.survivesParents !== undefined) patch.survives_parents = row.survivesParents;
       if (row.endsAtRetirement !== undefined) patch.ends_at_retirement = row.endsAtRetirement;
-      const { error } = await supabase.from("financial_income").update(patch).eq("id", id);
+      const { error } = await pdb.from("financial_income").update(patch).eq("id", id);
       if (error) throw error;
       return true;
     }, false);
   },
   async deleteFinancialIncome(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("financial_income").delete().eq("id", id);
+      const { error } = await pdb.from("financial_income").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -2058,7 +2058,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await supabase.from("financial_assumptions").select("*").eq("user_id", user.id).single();
+      const { data } = await pdb.from("financial_assumptions").select("*").eq("user_id", user.id).single();
       if (!data) return null;
       const r = data as Record<string, unknown>;
       return {
@@ -2075,7 +2075,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { error } = await supabase.from("financial_assumptions").upsert({
+      const { error } = await pdb.from("financial_assumptions").upsert({
         user_id: user.id,
         child_current_age: row.childCurrentAge, child_life_expectancy: row.childLifeExpectancy,
         parent_age: row.parentAge, parent_retirement_age: row.parentRetirementAge,
@@ -2093,7 +2093,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await supabase.from("insurance_policies").select("*").eq("user_id", user.id).order("created_at");
+      const { data, error } = await pdb.from("insurance_policies").select("*").eq("user_id", user.id).order("created_at");
       if (error) throw error;
       return (data ?? []).map((r: Record<string, unknown>) => ({
         id: r.id as string,
@@ -2119,7 +2119,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("insurance_policies")
+      const { data, error } = await pdb.from("insurance_policies")
         .insert({
           user_id: user.id,
           policy_type: policy.policyType,
@@ -2167,7 +2167,7 @@ export const dataService = {
       if (policy.claimStatus !== undefined)         patch.claim_status = policy.claimStatus;
       if (policy.renewalReminderDate !== undefined) patch.renewal_reminder_date = policy.renewalReminderDate;
       if (policy.notes !== undefined)               patch.notes = policy.notes;
-      const { data, error } = await supabase.from("insurance_policies")
+      const { data, error } = await pdb.from("insurance_policies")
         .update(patch).eq("id", id).select().single();
       if (error) throw error;
       const r = data as Record<string, unknown>;
@@ -2181,7 +2181,7 @@ export const dataService = {
   },
   async deleteInsurancePolicy(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("insurance_policies").delete().eq("id", id);
+      const { error } = await pdb.from("insurance_policies").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -2237,7 +2237,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("child_profile").select("*").eq("user_id", user.id).single();
+      const { data, error } = await pdb.from("child_profile").select("*").eq("user_id", user.id).single();
       if (error && error.code === "PGRST116") return null; // No rows found
       if (error) throw error;
       return {
@@ -2292,7 +2292,7 @@ export const dataService = {
         enrolled_schemes: profile.enrolledSchemes || [],
       };
 
-      const { data, error } = await supabase.from("child_profile")
+      const { data, error } = await pdb.from("child_profile")
         .upsert(payload, { onConflict: "user_id" })
         .select()
         .single();
@@ -2328,7 +2328,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data } = await supabase.from("succession_plans").select().eq("user_id", user.id);
+      const { data } = await pdb.from("succession_plans").select().eq("user_id", user.id);
       return (data || []).map(p => ({
         id: p.id,
         userId: p.user_id,
@@ -2346,7 +2346,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await supabase.from("succession_plans").insert({
+      const { data, error } = await pdb.from("succession_plans").insert({
         user_id: user.id,
         title: plan.title,
         description: plan.description,
@@ -2369,7 +2369,7 @@ export const dataService = {
 
   async listSuccessionGuardians(planId: string): Promise<SuccessionGuardian[]> {
     return safe(async () => {
-      const { data } = await supabase.from("succession_guardians").select().eq("plan_id", planId).order("order_index");
+      const { data } = await pdb.from("succession_guardians").select().eq("plan_id", planId).order("order_index");
       return (data || []).map(g => ({
         id: g.id,
         planId: g.plan_id,
@@ -2387,7 +2387,7 @@ export const dataService = {
 
   async createSuccessionGuardian(guardian: Omit<SuccessionGuardian, "id">): Promise<SuccessionGuardian | null> {
     return safe(async () => {
-      const { data, error } = await supabase.from("succession_guardians").insert({
+      const { data, error } = await pdb.from("succession_guardians").insert({
         plan_id: guardian.planId,
         person_id: guardian.personId,
         name: guardian.name,
@@ -2416,7 +2416,7 @@ export const dataService = {
 
   async listSuccessionAssets(planId: string): Promise<SuccessionAsset[]> {
     return safe(async () => {
-      const { data } = await supabase.from("succession_assets").select().eq("plan_id", planId);
+      const { data } = await pdb.from("succession_assets").select().eq("plan_id", planId);
       return (data || []).map(a => ({
         id: a.id,
         planId: a.plan_id,
@@ -2432,7 +2432,7 @@ export const dataService = {
 
   async createSuccessionAsset(asset: Omit<SuccessionAsset, "id">): Promise<SuccessionAsset | null> {
     return safe(async () => {
-      const { data, error } = await supabase.from("succession_assets").insert({
+      const { data, error } = await pdb.from("succession_assets").insert({
         plan_id: asset.planId,
         assetType: asset.assetType,
         asset_name: asset.assetName,
@@ -2457,7 +2457,7 @@ export const dataService = {
 
   async listSuccessionInstructions(planId: string): Promise<SuccessionInstruction[]> {
     return safe(async () => {
-      const { data } = await supabase.from("succession_instructions").select().eq("plan_id", planId);
+      const { data } = await pdb.from("succession_instructions").select().eq("plan_id", planId);
       return (data || []).map(i => ({
         id: i.id,
         planId: i.plan_id,
@@ -2470,7 +2470,7 @@ export const dataService = {
 
   async createSuccessionInstruction(instruction: Omit<SuccessionInstruction, "id">): Promise<SuccessionInstruction | null> {
     return safe(async () => {
-      const { data, error } = await supabase.from("succession_instructions").insert({
+      const { data, error } = await pdb.from("succession_instructions").insert({
         plan_id: instruction.planId,
         category: instruction.category,
         instruction: instruction.instruction,
@@ -2489,7 +2489,7 @@ export const dataService = {
 
   async updateSuccessionPlan(id: string, plan: Partial<Omit<SuccessionPlan, "id" | "userId" | "createdAt" | "updatedAt">>): Promise<SuccessionPlan | null> {
     return safe(async () => {
-      const { data, error } = await supabase.from("succession_plans").update({
+      const { data, error } = await pdb.from("succession_plans").update({
         title: plan.title,
         description: plan.description,
         status: plan.status,
@@ -2511,7 +2511,7 @@ export const dataService = {
 
   async updateSuccessionGuardian(id: string, guardian: Partial<Omit<SuccessionGuardian, "id" | "planId">>): Promise<SuccessionGuardian | null> {
     return safe(async () => {
-      const { data, error } = await supabase.from("succession_guardians").update({
+      const { data, error } = await pdb.from("succession_guardians").update({
         name: guardian.name,
         role: guardian.role,
         relationship: guardian.relationship,
@@ -2537,7 +2537,7 @@ export const dataService = {
 
   async deleteSuccessionGuardian(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("succession_guardians").delete().eq("id", id);
+      const { error } = await pdb.from("succession_guardians").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -2545,7 +2545,7 @@ export const dataService = {
 
   async deleteSuccessionAsset(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("succession_assets").delete().eq("id", id);
+      const { error } = await pdb.from("succession_assets").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);
@@ -2553,7 +2553,7 @@ export const dataService = {
 
   async deleteSuccessionInstruction(id: string): Promise<boolean> {
     return safe(async () => {
-      const { error } = await supabase.from("succession_instructions").delete().eq("id", id);
+      const { error } = await pdb.from("succession_instructions").delete().eq("id", id);
       if (error) throw error;
       return true;
     }, false);

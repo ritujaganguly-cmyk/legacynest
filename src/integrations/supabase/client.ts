@@ -9,6 +9,7 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   );
 }
 
+// Base client — auth, storage, RPC, and public schema queries
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
@@ -16,3 +17,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     storageKey: "legacynest.supabase.auth",
   },
 });
+
+// Protected schema client — SPDI data (medical, financial, legal, etc.)
+// anon role has zero access; authenticated users see only their own rows via RLS
+export const pdb = supabase.schema("protected");

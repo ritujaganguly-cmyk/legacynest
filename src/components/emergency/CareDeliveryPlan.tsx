@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Heart, Scale, Wallet, Home, AlertTriangle, FileText, Mail, CheckCircle2, Loader2, Copy, Check, ExternalLink, Users } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, pdb } from "@/integrations/supabase/client";
 
 type CareCircleMember = { id: string; name: string; email: string; phone: string; relationship: string; responsibilities: string[] | null };
 type SuccessionGuardian = { id: string; name: string; email: string; phone: string; relationship: string; role: string };
@@ -72,21 +72,21 @@ export function CareDeliveryPlan() {
       setCareCircle((cc ?? []) as CareCircleMember[]);
 
       // Succession guardians (2-step)
-      const { data: plans } = await supabase.from("succession_plans").select("id").eq("user_id", user.id);
+      const { data: plans } = await pdb.from("succession_plans").select("id").eq("user_id", user.id);
       if (plans?.length) {
-        const { data: gdata } = await supabase.from("succession_guardians").select("id,name,email,phone,relationship,role").in("plan_id", plans.map((p: {id:string}) => p.id)).order("order_index");
+        const { data: gdata } = await pdb.from("succession_guardians").select("id,name,email,phone,relationship,role").in("plan_id", plans.map((p: {id:string}) => p.id)).order("order_index");
         setGuardians((gdata ?? []) as SuccessionGuardian[]);
       }
 
       // Vault docs — column is document_name
-      const { data: vd } = await supabase.from("digital_vault_documents").select("id,document_name,category").eq("user_id", user.id).order("category");
+      const { data: vd } = await pdb.from("digital_vault_documents").select("id,document_name,category").eq("user_id", user.id).order("category");
       setVaultDocs((vd ?? []) as VaultDoc[]);
 
       // Names + break-glass instructions
       const [pp, cp, ep] = await Promise.all([
-        supabase.from("parent_profile").select("full_name").eq("user_id", user.id).single(),
-        supabase.from("child_profile").select("name").eq("user_id", user.id).single(),
-        supabase.from("emergency_plan").select("break_glass_instructions,coordinator_name,coordinator_phone").eq("user_id", user.id).single(),
+        pdb.from("parent_profile").select("full_name").eq("user_id", user.id).single(),
+        pdb.from("child_profile").select("name").eq("user_id", user.id).single(),
+        pdb.from("emergency_plan").select("break_glass_instructions,coordinator_name,coordinator_phone").eq("user_id", user.id).single(),
       ]);
       setParentName((pp.data as {full_name:string}|null)?.full_name ?? "");
       setChildName((cp.data as {name:string}|null)?.name ?? "your child");

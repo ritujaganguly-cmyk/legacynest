@@ -8,7 +8,7 @@ import {
   ChevronDown, ChevronUp, Stethoscope, Scale, Edit3, UserCheck, RefreshCw,
   Bell, Shield, Copy, CheckCircle2, ChevronRight,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, pdb } from "@/integrations/supabase/client";
 import { CareDeliveryPlan } from "@/components/emergency/CareDeliveryPlan";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -447,8 +447,8 @@ function ActivationCoordinators() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const [c, co] = await Promise.all([
-      supabase.from("emergency_coordinators").select("*").eq("user_id", user.id).eq("is_active", true).order("created_at"),
-      supabase.from("emergency_consent").select("*").eq("user_id", user.id).single(),
+      pdb.from("emergency_coordinators").select("*").eq("user_id", user.id).eq("is_active", true).order("created_at"),
+      pdb.from("emergency_consent").select("*").eq("user_id", user.id).single(),
     ]);
     setCoords((c.data ?? []) as Coordinator[]);
     const con = co.data as Consent | null;
@@ -466,7 +466,7 @@ function ActivationCoordinators() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error("Not signed in."); return; }
       const code = generateCode();
-      const { error } = await supabase.from("emergency_coordinators").insert({
+      const { error } = await pdb.from("emergency_coordinators").insert({
         user_id: user.id, ...form, activation_code: code,
       });
       if (error) toast.error(`Could not add coordinator: ${error.message}`);
@@ -485,8 +485,8 @@ function ActivationCoordinators() {
       if (!user) return;
       // Must delete requests first (FK constraint)
       await supabase.from("emergency_activation_requests").delete().eq("user_id", user.id);
-      await supabase.from("emergency_coordinators").delete().eq("user_id", user.id);
-      await supabase.from("emergency_consent").delete().eq("user_id", user.id);
+      await pdb.from("emergency_coordinators").delete().eq("user_id", user.id);
+      await pdb.from("emergency_consent").delete().eq("user_id", user.id);
       toast.success("Protocol deleted. You can set it up again from scratch.");
       setShowDeleteConfirm(false);
       await load();
@@ -498,7 +498,7 @@ function ActivationCoordinators() {
   }
 
   async function markCodeSent(id: string) {
-    await supabase.from("emergency_coordinators").update({ code_sent_at: new Date().toISOString() }).eq("id", id);
+    await pdb.from("emergency_coordinators").update({ code_sent_at: new Date().toISOString() }).eq("id", id);
     await load();
   }
 
@@ -510,7 +510,7 @@ function ActivationCoordinators() {
     const consentText = `I, the account holder, authorise LegacyNest to activate my Emergency Plan when ${needed} of ${total} named Emergency Coordinators submit a confirmation request via legacynest.co.in/emergency-confirm using their registered email and activation code. I consent to LegacyNest notifying my Care Circle members and sharing role-specific documents upon activation. Signed: ${new Date().toISOString()}`;
 
     // Try with auto_trigger_hours first; fall back without it if column doesn't exist yet
-    let { error } = await supabase.from("emergency_consent").upsert({
+    let { error } = await pdb.from("emergency_consent").upsert({
       user_id: user.id, signed_at: new Date().toISOString(), consent_text: consentText,
       majority_rule: `${needed} of ${total}`, checkin_freq: "monthly",
       auto_trigger_hours: autoTrigger,
@@ -518,7 +518,7 @@ function ActivationCoordinators() {
 
     if (error?.message?.includes("auto_trigger_hours")) {
       // Migration 038 not yet run — save without it
-      ({ error } = await supabase.from("emergency_consent").upsert({
+      ({ error } = await pdb.from("emergency_consent").upsert({
         user_id: user.id, signed_at: new Date().toISOString(), consent_text: consentText,
         majority_rule: `${needed} of ${total}`, checkin_freq: "monthly",
       }, { onConflict: "user_id" }));

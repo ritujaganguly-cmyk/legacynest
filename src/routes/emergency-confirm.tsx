@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ShieldAlert, CheckCircle2, Loader2, Upload } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, pdb } from "@/integrations/supabase/client";
 import logo from "@/assets/LegacyNest_Logo.jpeg";
 
 export const Route = createFileRoute("/emergency-confirm")({

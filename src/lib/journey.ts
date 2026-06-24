@@ -125,6 +125,105 @@ export function completedCount(done: Record<string, boolean>): number {
   return CHAPTERS.filter((c) => done[c.key]).length;
 }
 
+// ── Journey stages (maps to the 4 growth images) ──────────────────────────────
+
+export type JourneyStageNum = 0 | 1 | 2 | 3;
+
+export type JourneyStage = {
+  num: JourneyStageNum;
+  label: string;
+  tagline: string;
+  image: string;           // filename under src/assets/journey/
+  completeWhen: string[];  // chapter keys that must ALL be done to exit this stage
+};
+
+export const JOURNEY_STAGES: JourneyStage[] = [
+  {
+    num: 0,
+    label: "Seed Planted",
+    tagline: "Your plan is taking root. Complete your profiles to grow.",
+    image: "stage-1-seed.png",
+    completeWhen: ["child", "parent_profile"],
+  },
+  {
+    num: 1,
+    label: "Roots Established",
+    tagline: "Your care network is forming. Strong roots protect what matters.",
+    image: "stage-2-roots.png",
+    completeWhen: ["care_circle"],
+  },
+  {
+    num: 2,
+    label: "Strength Established",
+    tagline: "Medical, financial, and residential foundations are in place.",
+    image: "stage-3-stream.png",
+    completeWhen: ["medical", "financial", "residential", "vault"],
+  },
+  {
+    num: 3,
+    label: "Eternal Banyan",
+    tagline: "Legal protection and emergency readiness complete. Your legacy stands.",
+    image: "stage-4-banyan.png",
+    completeWhen: ["legal", "emergency"],
+  },
+];
+
+/** Returns which growth stage (0–3) the user is currently in. */
+export function currentStage(done: Record<string, boolean>): JourneyStageNum {
+  // Walk stages — a stage is "reached" when all prior stages' completeWhen keys are done
+  const allKeys = JOURNEY_STAGES.flatMap((s) => s.completeWhen);
+  const allDone = allKeys.every((k) => done[k]);
+  if (allDone) return 3;
+
+  let reached: JourneyStageNum = 0;
+  for (const stage of JOURNEY_STAGES) {
+    if (stage.completeWhen.every((k) => done[k])) {
+      reached = Math.min(stage.num + 1, 3) as JourneyStageNum;
+    } else {
+      break;
+    }
+  }
+  return reached;
+}
+
+/** True when all 9 chapters + all stage keys are done → show actionable items. */
+export function isJourneyComplete(done: Record<string, boolean>): boolean {
+  return CHAPTERS.every((c) => done[c.key]);
+}
+
+// ── Actionable items shown after journey completion ────────────────────────────
+
+export type ActionItem = {
+  title: string;
+  detail: string;
+  link?: string;
+  urgent?: boolean;
+};
+
+export const ACTIONABLE: Record<"short" | "medium" | "long", ActionItem[]> = {
+  short: [
+    { title: "Apply for UDID", detail: "Register at swavlambancard.gov.in for government scheme access.", link: "https://swavlambancard.gov.in", urgent: true },
+    { title: "Enroll in Niramaya Insurance", detail: "₹1 lakh/year health cover for UDID holders. Apply via National Trust.", urgent: true },
+    { title: "Share care plan with Care Circle", detail: "Send portal access to each caregiver from the Care Circle section." },
+    { title: "Activate Emergency Plan", detail: "Share coordinator codes and test your emergency contact chain." },
+    { title: "Review Will with a lawyer", detail: "Get your drafted Will reviewed and registered at a sub-registrar office." },
+  ],
+  medium: [
+    { title: "Register Special Needs Trust", detail: "Work with a lawyer to register your SNT with the Charity Commissioner." },
+    { title: "Join residential care waitlists", detail: "Good facilities have 5–10 year waits. Apply to your shortlisted options now." },
+    { title: "Apply for PM-DAKSH / NHFDC schemes", detail: "Explore vocational training and loan schemes for your child's independence." },
+    { title: "Annual plan review", detail: "Revisit your corpus projection and care plan every 12 months." },
+    { title: "Update nominee details", detail: "Ensure all bank accounts, FDs, and insurance policies have correct nominees." },
+  ],
+  long: [
+    { title: "Apply for legal guardianship (before age 18)", detail: "Start the guardianship process under RPWD Act 2016 at least 2 years before your child turns 18." },
+    { title: "UDID renewal", detail: "Track expiry dates — renewals must be initiated 6 months before lapse." },
+    { title: "Expand the Care Circle as family changes", detail: "Add new members, update succession order after life events (marriages, relocations)." },
+    { title: "Estate planning review", detail: "Update your Will and Trust annually or after any major asset change." },
+    { title: "Transition to supported independence", detail: "Explore supported employment and independent living options as your child grows." },
+  ],
+};
+
 // ── Streak (localStorage) ──────────────────────────────────────────────────
 
 const STREAK_KEY = "legacynest.journey.streak.v1";

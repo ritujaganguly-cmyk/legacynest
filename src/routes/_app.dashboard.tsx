@@ -2,14 +2,17 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   CheckCircle2, Circle, ArrowRight, Map, Clock, Flame,
-  ChevronRight, TreeDeciduous, FileDown
+  ChevronRight, FileDown
 } from "lucide-react";
 import { dataService } from "@/lib/data/mock";
 import { generateSuccessionReport } from "@/lib/report";
 import {
   CHAPTERS, buildCompletionMap, nextChapter, completedCount,
   recordVisit, streakCount, sessionDay, setPinnedKey, getPinnedKey,
+  currentStage, isJourneyComplete,
 } from "@/lib/journey";
+import { JourneyStageCard } from "@/components/journey/JourneyStageCard";
+import { ActionableItems } from "@/components/journey/ActionableItems";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({ meta: [{ title: "My Journey — LegacyNest" }] }),
@@ -68,9 +71,9 @@ function Dashboard() {
   const day = sessionDay();
   const numDone = completedCount(done);
   const next = nextChapter(done);
-  const tree = treeStage(numDone);
   const pct = Math.round((numDone / CHAPTERS.length) * 100);
-  const allDone = numDone === CHAPTERS.length;
+  const allDone = isJourneyComplete(done);
+  const stage = currentStage(done);
 
   const greeting = parentName
     ? `Welcome back, ${parentName.split(" ")[0]} 👋`
@@ -91,9 +94,8 @@ function Dashboard() {
             )}
           </p>
         </div>
-        <div className="text-center shrink-0">
-          <div className="text-3xl">{tree.emoji}</div>
-          <div className="text-[10px] font-semibold text-primary uppercase tracking-wide mt-0.5">{tree.label}</div>
+        <div className="text-center shrink-0 text-sm font-semibold text-primary">
+          {numDone}/{CHAPTERS.length}
         </div>
       </div>
 
@@ -172,25 +174,23 @@ function Dashboard() {
         </div>
       )}
 
-      {/* ── All done celebration ── */}
+      {/* ── Banyan growth stage OR Actionable items (when complete) ── */}
+      {!loading && (
+        allDone
+          ? <ActionableItems childName={childName} />
+          : <JourneyStageCard stageNum={stage} done={done} childName={childName} />
+      )}
+
+      {/* Download plan (always visible when all done) */}
       {!loading && allDone && (
-        <div className="legacy-card legacy-card-gold-top p-5 text-center space-y-3">
-          <div className="text-4xl">🌳</div>
-          <h2 className="text-xl font-bold">
-            {childName ? `${childName}'s plan is complete` : "Your plan is complete"}
-          </h2>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Every chapter documented. {childName || "Your child"}'s future is protected — revisit anytime to keep it current.
-          </p>
-          <button
-            onClick={async () => { setGenerating(true); try { await generateSuccessionReport(); } finally { setGenerating(false); } }}
-            disabled={generating}
-            className="inline-flex items-center gap-2 rounded-lg border border-primary px-5 py-2.5 text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
-          >
-            <FileDown className="h-4 w-4" />
-            {generating ? "Generating…" : "Download Full Plan"}
-          </button>
-        </div>
+        <button
+          onClick={async () => { setGenerating(true); try { await generateSuccessionReport(); } finally { setGenerating(false); } }}
+          disabled={generating}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-primary px-5 py-3 text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
+        >
+          <FileDown className="h-4 w-4" />
+          {generating ? "Generating…" : "Download Full Plan PDF"}
+        </button>
       )}
 
       {/* ── Journey Map ── */}

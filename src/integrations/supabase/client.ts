@@ -19,5 +19,13 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 // Protected schema client — SPDI data (medical, financial, legal, etc.)
+// Uses db.schema option for broader supabase-js version compatibility.
 // anon role has zero access; authenticated users see only their own rows via RLS
-export const pdb = supabase.schema("protected");
+export const pdb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    storageKey: "legacynest.supabase.auth",
+  },
+  db: { schema: "protected" },
+});

@@ -13,19 +13,19 @@ import { dataService } from "@/lib/data/mock";
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? "admin@legacynest.co.in";
 
 const NAV_PRIMARY = [
-  { to: "/dashboard",         label: "Dashboard",          icon: LayoutGrid },
-  { to: "/child-profile",     label: "Child Profile",      icon: Users },
-  { to: "/parent-profile",    label: "Parent Profile",     icon: User },
-  { to: "/care-circle",       label: "Care Circle",        icon: Users },
-  { to: "/caregiver",         label: "Succession Planning",icon: ClipboardList },
-  { to: "/medical",           label: "Medical",            icon: HeartPulse },
-  { to: "/insurance-policies",label: "Insurance",          icon: Shield },
-  { to: "/financial",         label: "Financial",          icon: Landmark },
-  { to: "/legal",             label: "Legal",              icon: Scale },
-  { to: "/residential",       label: "Residential",        icon: MapPin },
-  { to: "/vault",             label: "Digital Vault",      icon: Lock },
-  { to: "/emergency",         label: "Emergency",          icon: AlertTriangle },
-  { to: "/support" as "/support", label: "Support",        icon: BookOpen },
+  { to: "/dashboard",          label: "Dashboard",          icon: LayoutGrid },
+  { to: "/child-profile",      label: "Child Profile",      icon: Users },
+  { to: "/parent-profile",     label: "Parent Profile",     icon: User },
+  { to: "/care-circle",        label: "Care Circle",        icon: Users },
+  { to: "/caregiver",          label: "Succession",         icon: ClipboardList },
+  { to: "/medical",            label: "Medical",            icon: HeartPulse },
+  { to: "/residential",        label: "Residential",        icon: MapPin },
+  { to: "/insurance-policies", label: "Insurance",          icon: Shield },
+  { to: "/financial",          label: "Financial",          icon: Landmark },
+  { to: "/legal",              label: "Legal",              icon: Scale },
+  { to: "/vault",              label: "Digital Vault",      icon: Lock },
+  { to: "/emergency",          label: "Emergency",          icon: AlertTriangle },
+  { to: "/support" as "/support", label: "Support",         icon: BookOpen },
 ] as const;
 
 // ── Alert computation ────────────────────────────────────────────────────────

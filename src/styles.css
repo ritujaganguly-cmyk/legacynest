@@ -1,0 +1,328 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-deep: var(--primary-deep);
+  --color-primary-soft: var(--primary-soft);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface: var(--surface);
+  --color-surface-low: var(--surface-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-high: var(--surface-high);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+}
+
+:root {
+  --radius: 0.75rem;
+
+  /* Compassionate Legacy palette */
+  --background: oklch(0.985 0.018 60); /* #fff8f5 */
+  --foreground: oklch(0.22 0.035 40); /* #241910 */
+  --surface: oklch(0.985 0.018 60);
+  --surface-low: oklch(0.97 0.025 55); /* #fff1e8 */
+  --surface-container: oklch(0.955 0.03 55); /* #ffeadb */
+  --surface-high: oklch(0.93 0.035 50); /* #f3dfd0 */
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.035 40);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.035 40);
+
+  --primary: oklch(0.55 0.18 45); /* #9d4300 deep saffron */
+  --primary-foreground: oklch(1 0 0);
+  --primary-deep: oklch(0.48 0.17 42);
+  --primary-soft: oklch(0.7 0.18 55); /* f97316 orange */
+
+  --secondary: oklch(0.955 0.03 55);
+  --secondary-foreground: oklch(0.3 0.04 40);
+
+  --gold: oklch(0.78 0.15 80); /* warm gold */
+  --gold-soft: oklch(0.92 0.1 85);
+
+  --muted: oklch(0.96 0.02 55);
+  --muted-foreground: oklch(0.45 0.04 40); /* #584237 */
+
+  --accent: oklch(0.95 0.04 60);
+  --accent-foreground: oklch(0.3 0.04 40);
+
+  --destructive: oklch(0.55 0.22 28); /* #ba1a1a */
+  --destructive-foreground: oklch(1 0 0);
+
+  --success: oklch(0.55 0.13 150);
+  --success-foreground: oklch(1 0 0);
+  --success-soft: oklch(0.93 0.08 150);
+
+  --warning: oklch(0.72 0.16 75);
+  --warning-soft: oklch(0.94 0.08 85);
+
+  --border: oklch(0.9 0.03 50); /* #e0c0b1 outline-variant */
+  --input: oklch(0.92 0.02 55);
+  --ring: oklch(0.55 0.18 45);
+
+  --sidebar: oklch(0.97 0.025 55);
+  --sidebar-foreground: oklch(0.22 0.035 40);
+  --sidebar-accent: oklch(0.94 0.04 55);
+  --sidebar-accent-foreground: oklch(0.48 0.17 42);
+  --sidebar-border: oklch(0.9 0.03 50);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html,
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  .input {
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface-low);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    outline: none;
+  }
+  .input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-primary) 25%, transparent);
+  }
+
+  .legacy-card {
+    background-color: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 4px 12px -2px oklch(0.3 0.04 40 / 0.06);
+  }
+
+  .legacy-card-accent-top {
+    border-top: 4px solid var(--color-primary-soft);
+  }
+
+  .legacy-card-gold-top {
+    border-top: 4px solid var(--color-gold);
+  }
+
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.9rem;
+    border-radius: 0.6rem;
+    color: var(--color-foreground);
+    font-weight: 500;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
+  .sidebar-link:hover {
+    background-color: var(--color-sidebar-accent);
+  }
+  .sidebar-link.active {
+    background-color: var(--color-card);
+    color: var(--color-primary);
+    box-shadow: inset 3px 0 0 var(--color-primary);
+  }
+}
+
+/* ───────────────────────────────────────────────────────────
+   Onboarding — "The Banyan Journey"
+   Mobile-first (Android browser), one column, CTA always in
+   the thumb zone. Desktop reuses the same column, centered.
+   ─────────────────────────────────────────────────────────── */
+@layer components {
+  /* Outer stage: full dynamic-viewport, centers the column on desktop. */
+  .start-stage {
+    min-height: 100svh; /* fallback: smallest viewport = address bar shown */
+    display: flex;
+    justify-content: center;
+    background:
+      radial-gradient(120% 60% at 50% 0%, var(--color-surface-low), transparent 60%),
+      var(--color-background);
+  }
+  @supports (min-height: 100dvh) {
+    .start-stage {
+      min-height: 100dvh;
+    }
+  }
+
+  /* The flow column. Fixed to the visible viewport so the action
+     zone is ALWAYS on screen; the body scrolls inside if needed.
+     With interactive-widget=resizes-content, the soft keyboard
+     shrinks dvh and the CTA rides above it automatically. */
+  .step-screen {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+    height: 100svh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--color-background);
+    touch-action: manipulation;
+  }
+  @supports (height: 100dvh) {
+    .step-screen {
+      height: 100dvh;
+    }
+  }
+  /* Desktop (20%): give the column a soft "held device" frame. */
+  @media (min-width: 480px) {
+    .step-screen {
+      box-shadow: 0 24px 70px -24px oklch(0.3 0.04 40 / 0.25);
+    }
+  }
+
+  /* Top zone: brand + growth indicator, clears the status bar in standalone PWA. */
+  .step-top {
+    flex-shrink: 0;
+    padding: max(0.9rem, env(safe-area-inset-top)) 1.25rem 0.4rem;
+  }
+
+  /* Middle zone: the single question. Scrolls only if it must. */
+  .step-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.5rem 1.25rem 1rem;
+  }
+
+  /* Bottom zone: primary CTA, lifted above the gesture nav bar. */
+  .step-action {
+    flex-shrink: 0;
+    padding: 0.75rem 1.25rem max(1rem, env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--color-background) 70%, transparent);
+  }
+
+  /* 48dp minimum touch target (Android Material). */
+  .tap {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Large primary CTA — premium, thumb-friendly. */
+  .btn-cta {
+    width: 100%;
+    min-height: 56px;
+    border-radius: var(--radius-xl);
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition:
+      transform 0.12s ease,
+      background-color 0.15s ease,
+      opacity 0.15s ease;
+  }
+  .btn-cta:active {
+    transform: scale(0.985);
+    background-color: var(--color-primary-deep);
+  }
+  .btn-cta:disabled {
+    opacity: 0.45;
+  }
+
+  /* Big selectable card (Who / Goal steps). Full width, stacked. */
+  .choice-card {
+    width: 100%;
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    text-align: left;
+    padding: 1rem 1.1rem;
+    border-radius: var(--radius-xl);
+    border: 1.5px solid var(--color-border);
+    background: var(--color-card);
+    transition:
+      transform 0.12s ease,
+      border-color 0.15s ease,
+      background-color 0.15s ease;
+  }
+  .choice-card:active {
+    transform: scale(0.99);
+  }
+  .choice-card[data-selected="true"] {
+    border-color: var(--color-primary);
+    background: color-mix(in oklch, var(--color-primary) 7%, var(--color-card));
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-primary) 18%, transparent);
+  }
+}
+
+/* Banyan growth: each layer eases in and scales up from its own base. */
+.banyan g {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  transition:
+    opacity 0.5s ease,
+    transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Respect users who reduce motion: tree appears at its stage, no growth animation. */
+@media (prefers-reduced-motion: reduce) {
+  .banyan *,
+  .btn-cta,
+  .choice-card {
+    transition: none !important;
+    animation: none !important;
+  }
+}

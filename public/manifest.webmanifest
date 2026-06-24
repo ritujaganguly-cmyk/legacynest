@@ -1,0 +1,19 @@
+{
+  "name": "LegacyNest — Secure Your Family's Future",
+  "short_name": "LegacyNest",
+  "description": "Plant your family's legacy. Care planning, health records, and life-story preservation that grow with you.",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff8f5",
+  "theme_color": "#fff8f5",
+  "categories": ["lifestyle", "health", "productivity"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -75,8 +75,8 @@ function Dashboard() {
   const stage = currentStage(done);
 
   const greeting = parentName
-    ? `Welcome back, ${parentName.split(" ")[0]} 👋`
-    : "Welcome back 👋";
+    ? `Welcome back, ${parentName.split(" ")[0]}`
+    : "Welcome back";
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-12">
@@ -88,8 +88,8 @@ function Dashboard() {
           <p className="text-sm text-muted-foreground mt-0.5">
             {loading ? "Loading your journey…" : (
               childName
-                ? `Day ${day} · Building the plan for ${childName}`
-                : `Day ${day} · Your planning journey`
+                ? `Building the plan for ${childName}`
+                : `Your planning journey`
             )}
           </p>
         </div>

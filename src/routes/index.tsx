@@ -131,8 +131,8 @@ function Landing() {
       <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border/50">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="LegacyNest" className="h-9 w-9 object-contain mix-blend-multiply" />
-            <span className="text-lg font-bold text-primary">LegacyNest</span>
+            <img src={logo} alt="LegacyNest" className="h-12 w-12 object-contain mix-blend-multiply" />
+            <span className="text-xl font-bold text-primary">LegacyNest™</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8 text-sm text-foreground/70">
             <a href="#problem" className="hover:text-foreground transition-colors">The Problem</a>
@@ -140,14 +140,11 @@ function Landing() {
             <a href="#how" className="hover:text-foreground transition-colors">How It Works</a>
           </nav>
           <div className="flex items-center gap-3">
-            <Link to="/sign-in" className="hidden sm:inline text-sm font-semibold text-primary border border-primary rounded-lg px-4 py-2 hover:bg-primary hover:text-white transition-colors">
-              Log In
-            </Link>
             <Link
               to="/sign-in"
               className="rounded-lg bg-primary text-primary-foreground font-semibold px-5 py-2.5 text-sm hover:bg-primary/90 transition-colors shadow-sm"
             >
-              Get Started — Free
+              Get Started
             </Link>
           </div>
         </div>
@@ -159,7 +156,7 @@ function Landing() {
           src={hero}
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-contain object-right pointer-events-none"
+          className="absolute inset-0 w-[85%] h-[85%] my-auto ml-auto object-contain object-right pointer-events-none"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent pointer-events-none" />
 
@@ -399,10 +396,8 @@ function Landing() {
           {/* Brand */}
           <div className="md:col-span-1 flex flex-col gap-4">
             <div className="flex items-center gap-2">
-              <div className="h-9 w-9 rounded-full bg-white flex items-center justify-center shrink-0">
-                <img src={logo} alt="LegacyNest" className="h-7 w-7 object-contain" />
-              </div>
-              <span className="text-lg font-bold text-white">LegacyNest</span>
+              <img src={logo} alt="LegacyNest" className="h-10 w-10 object-contain brightness-0 invert shrink-0" />
+              <span className="text-lg font-bold text-white">LegacyNest™</span>
             </div>
             <p className="text-sm text-white/75 leading-relaxed">
               Helping families of children with special needs secure a dignified, planned future — today.
@@ -456,7 +451,7 @@ function Landing() {
               <span>legacynest.co.in@gmail.com</span>
             </a>
             <a
-              href="https://wa.me/917044063379"
+              href="https://wa.me/917044063718"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-start gap-2 text-sm text-white/75 hover:text-white transition-colors"
@@ -485,7 +480,7 @@ function Landing() {
 
         <div className="bg-[#9A4018]">
           <div className="max-w-7xl mx-auto px-6 py-5 flex flex-wrap items-center justify-between gap-4 text-xs text-white/50">
-            <span>LegacyNest TM {new Date().getFullYear()}</span>
+            <span>LegacyNest™ {new Date().getFullYear()}</span>
             <div className="flex flex-wrap items-center gap-5">
               {[
                 { label: "Privacy Policy", key: "privacy" },

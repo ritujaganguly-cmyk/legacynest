@@ -12,6 +12,7 @@ import {
   X,
   CheckCircle2,
   Send,
+  LayoutGrid,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ import { useNavigate } from "@tanstack/react-router";
 import logo from "@/assets/LegacyNest_Logo.jpeg";
 import { dataService } from "@/lib/data/mock";
 import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@/lib/session-store";
 
 export const Route = createFileRoute("/support")({
   head: () => ({ meta: [{ title: "Support & Contact — LegacyNest" }] }),
@@ -133,7 +135,7 @@ function ContactModal({
     if (ok) {
       setDone(true);
     } else {
-      toast.error("Could not submit. Please email us directly at hello@legacynest.co.in");
+      toast.error("Could not submit. Please email us directly at legacynest.co.in@gmail.com");
     }
   }
 
@@ -244,6 +246,7 @@ function ContactModal({
 function SupportPublicPage() {
   const [active, setActive] = useState<Category | null>(null);
   const navigate = useNavigate();
+  const { user } = useSession();
 
   async function handleClose() {
     setActive(null);
@@ -257,14 +260,23 @@ function SupportPublicPage() {
       <header className="max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
         <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt="LegacyNest" className="h-10 w-10 object-contain mix-blend-multiply" />
-          <span className="text-xl font-bold text-primary">LegacyNest</span>
+          <span className="text-xl font-bold text-primary">LegacyNest™</span>
         </Link>
-        <Link
-          to="/sign-in"
-          className="rounded-lg bg-primary-soft hover:bg-primary text-primary-foreground font-semibold px-5 py-2.5 text-sm transition-colors"
-        >
-          Log In
-        </Link>
+        {user ? (
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground font-semibold px-5 py-2.5 text-sm hover:bg-primary/90 transition-colors"
+          >
+            <LayoutGrid className="h-4 w-4" /> Go to Dashboard
+          </Link>
+        ) : (
+          <Link
+            to="/sign-in"
+            className="rounded-lg bg-primary-soft hover:bg-primary text-primary-foreground font-semibold px-5 py-2.5 text-sm transition-colors"
+          >
+            Log In
+          </Link>
+        )}
       </header>
 
       {/* Hero */}
@@ -315,14 +327,14 @@ function SupportPublicPage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
             <a
-              href="mailto:hello@legacynest.co.in"
+              href="mailto:legacynest.co.in@gmail.com"
               className="inline-flex items-center gap-2 rounded-xl border border-border bg-[#fdf6ee] hover:border-primary px-5 py-3 text-sm font-semibold text-foreground transition-colors"
             >
               <Mail className="h-4 w-4 text-primary" />
-              hello@legacynest.co.in
+              legacynest.co.in@gmail.com
             </a>
             <a
-              href="https://wa.me/917044063379"
+              href="https://wa.me/917044063718"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-xl border border-border bg-[#fdf6ee] hover:border-primary px-5 py-3 text-sm font-semibold text-foreground transition-colors"
@@ -340,7 +352,7 @@ function SupportPublicPage() {
       <div className="py-6 text-center text-xs bg-primary text-primary-foreground/90">
         <p className="font-medium text-primary-foreground text-sm">Built with love for every family walking this path. 💛</p>
         <p className="mt-1.5 text-primary-foreground/70">
-          LegacyNest TM {new Date().getFullYear()} ·{" "}
+          LegacyNest™ {new Date().getFullYear()} ·{" "}
           <Link to="/" className="underline hover:text-primary-foreground transition-colors">Home</Link>
         </p>
       </div>

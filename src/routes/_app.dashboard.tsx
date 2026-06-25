@@ -1,14 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  CheckCircle2, Circle, ArrowRight, Map, Clock, Flame,
+  CheckCircle2, Circle, ArrowRight, Map, Clock,
   ChevronRight, FileDown
 } from "lucide-react";
 import { dataService } from "@/lib/data/mock";
 import { generateSuccessionReport } from "@/lib/report";
 import {
   CHAPTERS, buildCompletionMap, nextChapter, completedCount,
-  recordVisit, streakCount, sessionDay, setPinnedKey, getPinnedKey,
+  recordVisit, sessionDay, setPinnedKey, getPinnedKey,
   currentStage, isJourneyComplete,
 } from "@/lib/journey";
 import { JourneyStageCard } from "@/components/journey/JourneyStageCard";
@@ -67,7 +67,6 @@ function Dashboard() {
     load();
   }, []);
 
-  const streak = streakCount();
   const day = sessionDay();
   const numDone = completedCount(done);
   const next = nextChapter(done);
@@ -115,34 +114,10 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* ── Stats row ── */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="legacy-card p-4 text-center">
-          <div className="flex items-center justify-center gap-1 text-primary mb-1">
-            <Flame className="h-4 w-4" />
-          </div>
-          <div className="text-2xl font-bold text-foreground">{streak}</div>
-          <div className="text-xs text-muted-foreground">
-            {streak === 1 ? "day streak" : "day streak"}
-          </div>
-        </div>
-        <div className="legacy-card p-4 text-center">
-          <div className="flex items-center justify-center gap-1 text-primary mb-1">
-            <CheckCircle2 className="h-4 w-4" />
-          </div>
-          <div className="text-2xl font-bold text-foreground">{numDone}</div>
-          <div className="text-xs text-muted-foreground">chapters done</div>
-        </div>
-        <div className="legacy-card p-4 text-center">
-          <div className="flex items-center justify-center gap-1 text-primary mb-1">
-            <Clock className="h-4 w-4" />
-          </div>
-          <div className="text-2xl font-bold text-foreground">
-            {CHAPTERS.slice(numDone).reduce((s, c) => s + c.minutes, 0)}
-          </div>
-          <div className="text-xs text-muted-foreground">min remaining</div>
-        </div>
-      </div>
+      {/* ── Stage card ── */}
+      {!loading && !allDone && (
+        <JourneyStageCard stageNum={stage} done={done} childName={childName} />
+      )}
 
       {/* ── Encouragement ── */}
       {!loading && (
@@ -174,11 +149,9 @@ function Dashboard() {
         </div>
       )}
 
-      {/* ── Banyan growth stage OR Actionable items (when complete) ── */}
-      {!loading && (
-        allDone
-          ? <ActionableItems childName={childName} />
-          : <JourneyStageCard stageNum={stage} done={done} childName={childName} />
+      {/* ── Actionable items (when journey complete) ── */}
+      {!loading && allDone && (
+        <ActionableItems childName={childName} />
       )}
 
       {/* Download plan (always visible when all done) */}

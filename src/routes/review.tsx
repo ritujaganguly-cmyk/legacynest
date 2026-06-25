@@ -278,7 +278,7 @@ function Landing() {
 
         <div className="bg-[#9A4018]">
           <div className="max-w-7xl mx-auto px-6 py-5 flex flex-wrap items-center justify-between gap-4 text-xs text-white/50">
-            <span>LegacyNest TM {new Date().getFullYear()}</span>
+            <span>LegacyNest™ {new Date().getFullYear()}</span>
             <div className="flex flex-wrap items-center gap-5">
               {[
                 { label: "Privacy Policy", key: "privacy" },

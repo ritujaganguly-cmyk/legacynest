@@ -329,56 +329,80 @@ function Financial() {
         </div>
       )}
 
+      {/* Monthly snapshot — always visible */}
+      <div className="grid sm:grid-cols-3 gap-3">
+        <div className="legacy-card p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Child's expenses now</div>
+          <div className="text-xl font-bold text-foreground">
+            ₹{projection?.monthlyPhase1Expense ? projection.monthlyPhase1Expense.toLocaleString("en-IN") : expenses.filter(e=>!e.phase3Only).reduce((s,e)=>s+e.monthlyAmount,0).toLocaleString("en-IN")}<span className="text-sm font-normal text-muted-foreground">/mo</span>
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Current monthly spend on your child</div>
+        </div>
+        <div className="legacy-card p-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">After parents — monthly need</div>
+          <div className="text-xl font-bold text-foreground">
+            ₹{projection?.monthlyPhase2Expense ? projection.monthlyPhase2Expense.toLocaleString("en-IN") : "—"}<span className="text-sm font-normal text-muted-foreground">/mo</span>
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">After adding care costs, removing waived ones</div>
+        </div>
+        <div className={`legacy-card p-4 ${projection && projection.monthlyPhase2Net >= 0 ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Child's income after parents</div>
+          <div className={`text-xl font-bold ${projection && projection.monthlyPhase2Net >= 0 ? "text-green-800" : "text-red-800"}`}>
+            ₹{projection?.monthlyPhase2Income ? projection.monthlyPhase2Income.toLocaleString("en-IN") : "—"}<span className="text-sm font-normal opacity-70">/mo</span>
+          </div>
+          <div className={`text-xs mt-1 font-semibold ${projection && projection.monthlyPhase2Net >= 0 ? "text-green-700" : "text-red-700"}`}>
+            {projection ? (projection.monthlyPhase2Net >= 0
+              ? `Surplus ₹${projection.monthlyPhase2Net.toLocaleString("en-IN")}/mo`
+              : `Gap ₹${Math.abs(projection.monthlyPhase2Net).toLocaleString("en-IN")}/mo`) : "Add expenses & income"}
+          </div>
+        </div>
+      </div>
+
       {/* Status Banner */}
       {projection ? (
         <div className={`rounded-2xl border p-5 ${statusColor}`}>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <StatusIcon className="h-7 w-7 shrink-0" />
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+            <StatusIcon className="h-7 w-7 shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="font-bold text-lg">
-                {projection.status === "secure" ? "Plan is on track" :
-                 projection.status === "at_risk" ? "Plan needs attention" : "Critical shortfall"}
+                {projection.status === "secure" ? "Plan is on track — funds last lifetime" :
+                 projection.status === "at_risk" ? "Funds may not last lifetime — needs attention" :
+                 "Critical shortfall — significant gap to cover"}
               </div>
-              <div className="text-sm mt-0.5 opacity-80">
-                {projection.status === "secure"
-                  ? `Corpus is projected to cover the full lifetime. Sustainability: ${Math.round(projection.sustainabilityRatio * 100)}%.`
-                  : `Corpus covers ${Math.round(projection.sustainabilityRatio * 100)}% of lifetime need.${projection.depletionChildAge ? ` Funds run out when ${assumptions.childCurrentAge < projection.depletionChildAge ? "child" : "child"} turns ${projection.depletionChildAge}.` : ""}`}
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-4 text-sm sm:text-right">
-              <div>
-                <div className="opacity-60 text-xs font-semibold uppercase tracking-wide">Corpus needed</div>
-                <div className="font-bold text-base">{formatCrore(projection.requiredAtTransition)}</div>
-              </div>
-              <div>
-                <div className="opacity-60 text-xs font-semibold uppercase tracking-wide">On track for</div>
-                <div className="font-bold text-base">{formatCrore(projection.corpusAtTransition)}</div>
+              <div className="text-sm mt-1 opacity-80">
+                {projection.fundsDurationYears === null
+                  ? `Current assets + child's income fully cover costs through age ${assumptions.childLifeExpectancy}.`
+                  : `Based on current assets and child's income, funds run out in ${projection.fundsDurationYears} years — when child is ${assumptions.childCurrentAge + projection.fundsDurationYears}.`}
               </div>
             </div>
           </div>
 
-          {/* Three levers */}
-          {(projection.recommendedMonthlySIP > 0 || projection.insuranceGap > 0) && (
-            <div className="mt-4 pt-4 border-t border-current/20 flex flex-wrap gap-4">
-              {projection.recommendedMonthlySIP > 0 && (
-                <div className="rounded-xl bg-white/40 px-4 py-2.5">
-                  <div className="text-xs font-semibold opacity-70">Monthly SIP needed</div>
-                  <div className="font-bold text-lg">₹{projection.recommendedMonthlySIP.toLocaleString("en-IN")}</div>
-                </div>
-              )}
-              {projection.insuranceGap > 0 && (
-                <div className="rounded-xl bg-white/40 px-4 py-2.5">
-                  <div className="text-xs font-semibold opacity-70">Insurance gap (sudden loss)</div>
-                  <div className="font-bold text-lg">{formatCrore(projection.insuranceGap)}</div>
-                </div>
-              )}
+          <div className="mt-4 pt-4 border-t border-current/20 grid sm:grid-cols-3 gap-4">
+            <div className="rounded-xl bg-white/40 px-4 py-3">
+              <div className="text-xs font-semibold opacity-70 mb-1">Corpus needed when parents gone</div>
+              <div className="font-bold text-base">{formatCrore(projection.requiredAtTransition)}</div>
+              <div className="text-xs opacity-60 mt-0.5">PV of lifetime care costs</div>
             </div>
-          )}
+            {projection.investmentLumpSum > 0 && (
+              <div className="rounded-xl bg-white/40 px-4 py-3">
+                <div className="text-xs font-semibold opacity-70 mb-1">Invest today to close gap</div>
+                <div className="font-bold text-base">{formatCrore(projection.investmentLumpSum)}</div>
+                <div className="text-xs opacity-60 mt-0.5">Lump sum growing at 8% p.a.</div>
+              </div>
+            )}
+            {projection.insuranceGap > 0 && (
+              <div className="rounded-xl bg-white/40 px-4 py-3">
+                <div className="text-xs font-semibold opacity-70 mb-1">Insurance needed (if parent dies today)</div>
+                <div className="font-bold text-base">{formatCrore(projection.insuranceGap)}</div>
+                <div className="text-xs opacity-60 mt-0.5">After deducting current assets + existing cover</div>
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         <div className="rounded-2xl border border-border bg-surface-low p-5 flex items-center gap-3 text-sm text-muted-foreground">
           <Info className="h-5 w-5 shrink-0" />
-          Add expenses and income to see the lifetime projection and recommendations.
+          Add your child's expenses and income streams below to see the lifetime projection.
         </div>
       )}
 
@@ -391,14 +415,14 @@ function Financial() {
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`flex-1 py-3 text-sm font-semibold capitalize transition-colors ${
+              className={`flex-1 py-3 text-xs sm:text-sm font-semibold transition-colors ${
                 tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-surface-low"
               }`}
             >
-              {t === "assumptions" ? "Rates" : t.charAt(0).toUpperCase() + t.slice(1)}
-              {t === "expenses" && expenses.length > 0 && ` (${expenses.length})`}
-              {t === "income"   && income.length   > 0 && ` (${income.length})`}
-              {t === "assets"   && assets.length   > 0 && ` (${assets.length})`}
+              {t === "expenses"    ? `Expenses${expenses.length > 0 ? ` (${expenses.length})` : ""}` :
+               t === "income"     ? `Child's Income${income.length > 0 ? ` (${income.length})` : ""}` :
+               t === "assets"     ? `Assets${assets.length > 0 ? ` (${assets.length})` : ""}` :
+               "Assumptions"}
             </button>
           ))}
         </div>
@@ -406,12 +430,17 @@ function Financial() {
         {/* EXPENSES TAB */}
         {tab === "expenses" && (
           <div>
+            <div className="px-5 pt-3 pb-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-800 leading-relaxed">
+              <strong>Current expenses</strong> = what you spend on your child now. &nbsp;
+              <strong>Added after parents gone</strong> = extra costs that kick in (e.g. full-time paid caregiver). &nbsp;
+              <strong>Waived after parents gone</strong> = costs that disappear (e.g. transport to a school your child won't attend).
+            </div>
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div>
-                <span className="font-semibold text-sm">Monthly expenses</span>
+                <span className="font-semibold text-sm">Child's monthly expenses</span>
                 {expenses.length > 0 && (
                   <span className="ml-2 text-xs text-muted-foreground">
-                    Total: ₹{totalMonthlyExpense.toLocaleString("en-IN")}/mo
+                    Total now: ₹{totalMonthlyExpense.toLocaleString("en-IN")}/mo
                   </span>
                 )}
               </div>
@@ -435,7 +464,7 @@ function Financial() {
                     <th className="py-2.5 font-medium">Category</th>
                     <th className="py-2.5 font-medium text-right">₹/mo</th>
                     <th className="py-2.5 font-medium text-center">Inflation</th>
-                    <th className="py-2.5 font-medium text-center">Phase 3 only</th>
+                    <th className="py-2.5 font-medium text-center">When active</th>
                     <th className="py-2.5 pr-4" />
                   </tr>
                 </thead>
@@ -447,8 +476,11 @@ function Financial() {
                       <td className="py-3 text-right font-semibold">₹{e.monthlyAmount.toLocaleString("en-IN")}</td>
                       <td className="py-3 text-center text-muted-foreground text-xs">{e.inflationRate}%</td>
                       <td className="py-3 text-center">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${e.phase3Only ? "bg-amber-50 text-amber-700" : "bg-green-50 text-green-700"}`}>
-                          {e.phase3Only ? "After parents" : "Always"}
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          (e as any).waivedAfterParents ? "bg-blue-50 text-blue-700" :
+                          e.phase3Only ? "bg-amber-50 text-amber-700" : "bg-green-50 text-green-700"
+                        }`}>
+                          {(e as any).waivedAfterParents ? "Waived after" : e.phase3Only ? "Added after" : "Always"}
                         </span>
                       </td>
                       <td className="py-3 pr-4 flex gap-1 justify-end">
@@ -471,9 +503,12 @@ function Financial() {
         {/* INCOME TAB */}
         {tab === "income" && (
           <div>
+            <div className="px-5 pt-3 pb-2 bg-green-50 border-b border-green-100 text-xs text-green-800 leading-relaxed">
+              <strong>Child's own income only</strong> — employment, disability pension, rental from assets assigned to child, family pension after parents. NOT parent salary or parent income.
+            </div>
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div>
-                <span className="font-semibold text-sm">Income streams</span>
+                <span className="font-semibold text-sm">Child's income streams</span>
                 {income.length > 0 && (
                   <span className="ml-2 text-xs text-muted-foreground">
                     Total: ₹{totalMonthlyIncome.toLocaleString("en-IN")}/mo
@@ -535,9 +570,12 @@ function Financial() {
         {/* ASSETS TAB */}
         {tab === "assets" && (
           <div>
+            <div className="px-5 pt-3 pb-2 bg-blue-50 border-b border-blue-100 text-xs text-blue-800 leading-relaxed">
+              <strong>Assets allocated to your child</strong> — FDs, property, investments designated for the child via will or trust. Check nominee names. These feed into the corpus projection.
+            </div>
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div>
-                <span className="font-semibold text-sm">Corpus assets</span>
+                <span className="font-semibold text-sm">Assets for child's corpus</span>
                 {assets.length > 0 && (
                   <span className="ml-2 text-xs text-muted-foreground">
                     Total: {formatCrore(currentCorpus)}
@@ -586,7 +624,7 @@ function Financial() {
               </table>
             )}
             <div className="px-5 py-3 bg-surface-low/50 text-xs text-muted-foreground border-t border-border">
-              Assets feed into the corpus total used in the projection. Expected returns are set globally in <button onClick={() => setShowAssumptions(true)} className="text-primary underline">Assumptions</button>.
+              All assets grow at <strong>8% p.a.</strong> in the projection. Ensure each asset has the correct nominee. Go to <strong>Legal Planning</strong> to confirm they are captured in your Will or Trust.
             </div>
           </div>
         )}
@@ -603,7 +641,7 @@ function Financial() {
                 ["Child life expectancy", `${assumptions.childLifeExpectancy} yrs`],
                 ["Parent current age", `${assumptions.parentAge} yrs`],
                 ["Parent retires at", `${assumptions.parentRetirementAge} yrs`],
-                ["Phase 3 starts (parents gone)", `Parent age ${assumptions.parentLifeExpectancy} / Child age ${assumptions.childCurrentAge + transitionYear}`],
+                ["Parents gone at", `Parent age ${assumptions.parentLifeExpectancy} / Child age ${assumptions.childCurrentAge + transitionYear}`],
                 ["Years to plan for", `${assumptions.childLifeExpectancy - assumptions.childCurrentAge} yrs`],
                 ["General inflation", `${assumptions.generalInflation}%`],
                 ["Portfolio return (earning years)", `${assumptions.blendedReturnPhase1}%`],
@@ -693,15 +731,26 @@ function Financial() {
                   onChange={e => setExpDraft(d => ({ ...d, inflationRate: Number(e.target.value) }))} />
               </label>
             </div>
-            <label className="flex items-start gap-3 cursor-pointer rounded-lg border border-border p-3">
+            <label className="flex items-start gap-3 cursor-pointer rounded-lg border border-amber-200 bg-amber-50 p-3">
               <input type="checkbox" className="mt-0.5 accent-primary"
                 checked={expDraft.phase3Only ?? false}
-                onChange={e => setExpDraft(d => ({ ...d, phase3Only: e.target.checked }))} />
+                onChange={e => setExpDraft(d => ({ ...d, phase3Only: e.target.checked, waivedAfterParents: false }))} />
               <div>
-                <div className="text-sm font-medium">Only after parents are gone</div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  Tick for costs that don't exist today but kick in when parents can't caregive
-                  (e.g. full-time paid caregiver, assisted living rent).
+                <div className="text-sm font-medium text-amber-900">Added after parents gone</div>
+                <div className="text-xs text-amber-700 mt-0.5">
+                  Costs that don't exist today but kick in when parents can no longer caregive
+                  (e.g. full-time paid caregiver, assisted living rent, home modifications).
+                </div>
+              </div>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer rounded-lg border border-blue-200 bg-blue-50 p-3">
+              <input type="checkbox" className="mt-0.5 accent-primary"
+                checked={(expDraft as any).waivedAfterParents ?? false}
+                onChange={e => setExpDraft(d => ({ ...d, waivedAfterParents: e.target.checked, phase3Only: false }))} />
+              <div>
+                <div className="text-sm font-medium text-blue-900">Waived after parents gone</div>
+                <div className="text-xs text-blue-700 mt-0.5">
+                  Costs that disappear after parents die (e.g. school transport if child won't attend, activities parents personally run).
                 </div>
               </div>
             </label>

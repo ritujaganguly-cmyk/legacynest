@@ -175,6 +175,16 @@ function LegalPage() {
           {open === key && (
             <div className="border-t border-border px-5 py-5 space-y-4">
 
+              {/* Draft helper banner */}
+              {["will","trust","poa"].includes(key) && (
+                <div className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 flex items-start gap-3">
+                  <BookOpen className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                  <div className="text-xs text-blue-800 leading-relaxed">
+                    <strong>Not sure where to start?</strong> Fill in what you know, then click <strong>"Generate Draft"</strong> at the bottom — it downloads a Word-ready PDF template you can take to your lawyer. You don't need all fields to generate a draft.
+                  </div>
+                </div>
+              )}
+
               {key === "will" && (
                 <>
                   <div className={G2}>

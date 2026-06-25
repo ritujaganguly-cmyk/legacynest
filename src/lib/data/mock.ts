@@ -1690,15 +1690,17 @@ export const dataService = {
     }, false);
   },
 
-  /* PROFILE UPDATE — writes to protected.parent_profile */
+  /* PROFILE UPDATE — writes phone to protected.parent_profile only.
+     full_name is NOT touched here — use saveParentProfile for that. */
   async updateProfile(displayName: string, phone?: string): Promise<boolean> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Not authenticated");
+    // Only update phone; never overwrite full_name from the settings page
+    if (!phone) return true;
     const { error } = await pdb.from("parent_profile")
       .upsert({
         user_id: user.id,
-        full_name: displayName,
-        phone: phone ?? null,
+        phone: phone,
       }, { onConflict: "user_id" });
     if (error) {
       console.error("[updateProfile]", error.message);

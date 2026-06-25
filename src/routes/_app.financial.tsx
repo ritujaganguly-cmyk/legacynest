@@ -10,7 +10,7 @@ import {
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { dataService, type FinancialExpenseRow, type FinancialIncomeRow, type FinancialAssumptionsRow, type FinancialAsset } from "@/lib/data/mock";
-import { formatCrore } from "@/lib/financial-projection";
+import { runProjection, formatCrore, type FinancialExpense, type FinancialIncome, type Assumptions } from "@/lib/financial-projection";
 
 export const Route = createFileRoute("/_app/financial")({
   head: () => ({ meta: [{ title: "Financial Planning — LegacyNest" }] }),
@@ -105,6 +105,23 @@ function Financial() {
     () => assets.reduce((s, a) => s + (a.currentValue ?? 0), 0),
     [assets]
   );
+
+  const projection = useMemo(() => {
+    if (expenses.length === 0 && income.length === 0) return null;
+    const expInput: FinancialExpense[] = expenses.map(e => ({
+      id: e.id, name: e.name, category: e.category,
+      monthlyAmount: e.monthlyAmount, inflationRate: e.inflationRate, phase3Only: e.phase3Only,
+    }));
+    const incInput: FinancialIncome[] = income.map(i => ({
+      id: i.id, name: i.name, incomeType: i.incomeType,
+      monthlyAmount: i.monthlyAmount, incrementRate: i.incrementRate,
+      survivesParents: i.survivesParents, endsAtRetirement: i.endsAtRetirement,
+    }));
+    const ass: Assumptions = { ...assumptions };
+    return runProjection(expInput, incInput, currentCorpus, ass);
+  }, [expenses, income, currentCorpus, assumptions]);
+
+  const transitionYear = assumptions.parentLifeExpectancy - assumptions.parentAge;
 
   // ── Expense dialog ────────────────────────────────────────
   const [expDialog, setExpDialog] = useState(false);

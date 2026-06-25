@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   CheckCircle2, Circle, ArrowRight, Map, Clock,
-  ChevronRight, FileDown
+  ChevronRight, FileDown, RefreshCw
 } from "lucide-react";
 import { dataService } from "@/lib/data/mock";
 import { generateSuccessionReport } from "@/lib/report";
@@ -44,27 +44,31 @@ function Dashboard() {
   const [parentName, setParentName] = useState("");
   const [done, setDone] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [pinnedKey, setPinned] = useState<string | null>(() => getPinnedKey());
 
+  async function load(showRefreshing = false) {
+    if (showRefreshing) setRefreshing(true);
+    try {
+      const [child, parent, progress] = await Promise.all([
+        dataService.getChildProfile(),
+        dataService.getParentProfile(),
+        dataService.refreshPlanProgress(),
+      ]);
+      setChildName(child?.name ?? "");
+      setParentName((parent as { full_name?: string } | null)?.full_name ?? "");
+      setDone(buildCompletionMap(progress, !!child?.name));
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }
+
   useEffect(() => {
     recordVisit();
-
-    async function load() {
-      try {
-        const [child, parent, progress] = await Promise.all([
-          dataService.getChildProfile(),
-          dataService.getParentProfile(),
-          dataService.getPlanProgress(),
-        ]);
-        setChildName(child?.name ?? "");
-        setParentName((parent as { full_name?: string } | null)?.full_name ?? "");
-        setDone(buildCompletionMap(progress, !!child?.name));
-      } finally {
-        setLoading(false);
-      }
-    }
     load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const day = sessionDay();
@@ -87,14 +91,21 @@ function Dashboard() {
           <h1 className="text-2xl font-bold text-foreground">{greeting}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {loading ? "Loading your journey…" : (
-              childName
-                ? `Building the plan for ${childName}`
-                : `Your planning journey`
+              childName ? `Building the plan for ${childName}` : `Your planning journey`
             )}
           </p>
         </div>
-        <div className="text-center shrink-0 text-sm font-semibold text-primary">
-          {numDone}/{CHAPTERS.length}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => load(true)}
+            disabled={refreshing}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors disabled:opacity-50"
+            title="Refresh progress"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            {refreshing ? "Refreshing…" : "Refresh"}
+          </button>
+          <span className="text-sm font-semibold text-primary">{numDone}/{CHAPTERS.length}</span>
         </div>
       </div>
 

@@ -396,7 +396,6 @@ function Landing() {
           {/* Brand */}
           <div className="md:col-span-1 flex flex-col gap-4">
             <div className="flex items-center gap-2">
-              <img src={logo} alt="LegacyNest" className="h-10 w-10 object-contain brightness-0 invert shrink-0" />
               <span className="text-lg font-bold text-white">LegacyNest™</span>
             </div>
             <p className="text-sm text-white/75 leading-relaxed">

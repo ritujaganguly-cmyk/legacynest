@@ -2264,62 +2264,63 @@ export const dataService = {
     }, null);
   },
   async saveChildProfile(profile: Omit<ChildProfile, "id">): Promise<ChildProfile | null> {
-    return safe(async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("not authenticated");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
 
-      const payload = {
-        user_id: user.id,
-        name: profile.name,
-        date_of_birth: profile.dateOfBirth || null,
-        photo_url: profile.photoUrl || null,
-        disability_type: profile.disabilityType || null,
-        disability_percentage: profile.disabilityPercentage ?? 0,
-        udid_number: profile.udidNumber || null,
-        udid_validity: profile.udidValidity || null,
-        blood_group: profile.bloodGroup || null,
-        allergies: profile.allergies || null,
-        current_medications: profile.currentMedications || null,
-        emergency_medical_info: profile.emergencyMedicalInfo || null,
-        communication_style: profile.communicationStyle || null,
-        behavioral_triggers: profile.behavioralTriggers || null,
-        comfort_items: profile.comfortItems || null,
-        dietary_requirements: profile.dietaryRequirements || null,
-        current_school: profile.currentSchool || null,
-        therapy_providers: profile.therapyProviders || null,
-        iep_details: profile.iepDetails || null,
-        enrolled_schemes: profile.enrolledSchemes || [],
-      };
+    const payload = {
+      user_id: user.id,
+      name: profile.name,
+      date_of_birth: profile.dateOfBirth || null,
+      photo_url: profile.photoUrl || null,
+      disability_type: profile.disabilityType || null,
+      disability_percentage: profile.disabilityPercentage ?? 0,
+      udid_number: profile.udidNumber || null,
+      udid_validity: profile.udidValidity || null,
+      blood_group: profile.bloodGroup || null,
+      allergies: profile.allergies || null,
+      current_medications: profile.currentMedications || null,
+      emergency_medical_info: profile.emergencyMedicalInfo || null,
+      communication_style: profile.communicationStyle || null,
+      behavioral_triggers: profile.behavioralTriggers || null,
+      comfort_items: profile.comfortItems || null,
+      dietary_requirements: profile.dietaryRequirements || null,
+      current_school: profile.currentSchool || null,
+      therapy_providers: profile.therapyProviders || null,
+      iep_details: profile.iepDetails || null,
+      enrolled_schemes: profile.enrolledSchemes || [],
+    };
 
-      const { data, error } = await pdb.from("child_profile")
-        .upsert(payload, { onConflict: "user_id" })
-        .select()
-        .single();
+    const { data, error } = await pdb.from("child_profile")
+      .upsert(payload, { onConflict: "user_id" })
+      .select()
+      .single();
 
-      if (error) throw error;
-      return {
-        id: data.id,
-        name: data.name,
-        dateOfBirth: data.date_of_birth,
-        photoUrl: data.photo_url,
-        disabilityType: data.disability_type,
-        disabilityPercentage: data.disability_percentage ?? 0,
-        udidNumber: data.udid_number,
-        udidValidity: data.udid_validity,
-        bloodGroup: data.blood_group,
-        allergies: data.allergies,
-        currentMedications: data.current_medications,
-        emergencyMedicalInfo: data.emergency_medical_info,
-        communicationStyle: data.communication_style,
-        behavioralTriggers: data.behavioral_triggers,
-        comfortItems: data.comfort_items,
-        dietaryRequirements: data.dietary_requirements,
-        currentSchool: data.current_school,
-        therapyProviders: data.therapy_providers,
-        iepDetails: data.iep_details,
-        enrolledSchemes: data.enrolled_schemes ?? [],
-      };
-    }, null);
+    if (error) {
+      console.error("[saveChildProfile]", error.message);
+      throw new Error(error.message);
+    }
+    return {
+      id: data.id,
+      name: data.name,
+      dateOfBirth: data.date_of_birth,
+      photoUrl: data.photo_url,
+      disabilityType: data.disability_type,
+      disabilityPercentage: data.disability_percentage ?? 0,
+      udidNumber: data.udid_number,
+      udidValidity: data.udid_validity,
+      bloodGroup: data.blood_group,
+      allergies: data.allergies,
+      currentMedications: data.current_medications,
+      emergencyMedicalInfo: data.emergency_medical_info,
+      communicationStyle: data.communication_style,
+      behavioralTriggers: data.behavioral_triggers,
+      comfortItems: data.comfort_items,
+      dietaryRequirements: data.dietary_requirements,
+      currentSchool: data.current_school,
+      therapyProviders: data.therapy_providers,
+      iepDetails: data.iep_details,
+      enrolledSchemes: data.enrolled_schemes ?? [],
+    };
   },
 
   /* ─── SUCCESSION PLANNING ─── */

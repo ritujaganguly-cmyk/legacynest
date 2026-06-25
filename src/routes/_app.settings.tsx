@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Bell, Fingerprint, KeyRound, LogOut, Shield, Smartphone, UserCircle, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -12,6 +12,38 @@ export const Route = createFileRoute("/_app/settings")({
   component: SettingsPage,
 });
 
+const SECURITY_STORAGE_KEY = (userId: string) => `legacynest.security.v1.${userId}`;
+
+type SecurityPrefs = {
+  twoFactor: boolean;
+  biometric: boolean;
+  trustedDevices: boolean;
+  planReminders: boolean;
+  caregiverActivity: boolean;
+};
+
+const DEFAULT_SECURITY: SecurityPrefs = {
+  twoFactor: true,
+  biometric: true,
+  trustedDevices: false,
+  planReminders: true,
+  caregiverActivity: false,
+};
+
+function loadSecurityPrefs(userId: string): SecurityPrefs {
+  try {
+    const raw = localStorage.getItem(SECURITY_STORAGE_KEY(userId));
+    if (raw) return { ...DEFAULT_SECURITY, ...JSON.parse(raw) };
+  } catch { /* ignore */ }
+  return DEFAULT_SECURITY;
+}
+
+function saveSecurityPrefs(userId: string, prefs: SecurityPrefs) {
+  try {
+    localStorage.setItem(SECURITY_STORAGE_KEY(userId), JSON.stringify(prefs));
+  } catch { /* ignore */ }
+}
+
 function SettingsPage() {
   const { user, signOut } = useSession();
   const navigate = useNavigate();
@@ -19,21 +51,48 @@ function SettingsPage() {
   const [displayName, setDisplayName] = useState(user?.displayName ?? "");
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
+  const [securityPrefs, setSecurityPrefs] = useState<SecurityPrefs>(DEFAULT_SECURITY);
+  const [savingSecurity, setSavingSecurity] = useState(false);
+
+  // Load existing profile + security prefs
+  useEffect(() => {
+    if (!user) return;
+    setSecurityPrefs(loadSecurityPrefs(user.id));
+
+    dataService.getParentProfile().then((p) => {
+      if (p) {
+        const profile = p as Record<string, unknown>;
+        if (profile.full_name) setDisplayName(profile.full_name as string);
+        if (profile.phone) setPhone(profile.phone as string);
+      }
+    });
+  }, [user]);
 
   async function handleSaveProfile() {
     setSaving(true);
     try {
-      const ok = await dataService.updateProfile(displayName, phone || undefined);
-      if (ok) {
-        toast.success("Profile updated successfully.");
-      } else {
-        toast.error("Failed to update profile. Please try again.");
-      }
-    } catch {
-      toast.error("An error occurred while saving your profile.");
+      await dataService.updateProfile(displayName, phone || undefined);
+      toast.success("Profile updated successfully.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save profile.";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
+  }
+
+  function updatePref(key: keyof SecurityPrefs, value: boolean) {
+    setSecurityPrefs((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function handleSaveSecurity() {
+    if (!user) return;
+    setSavingSecurity(true);
+    saveSecurityPrefs(user.id, securityPrefs);
+    setTimeout(() => {
+      setSavingSecurity(false);
+      toast.success("Preferences saved.");
+    }, 300);
   }
 
   function handleSignOut() {
@@ -50,12 +109,11 @@ function SettingsPage() {
         </p>
       </div>
 
+      {/* Profile */}
       <Section title="Profile" icon={UserCircle}>
         <div className="py-4 space-y-4">
           <div className="space-y-1.5">
-            <label className="text-sm text-muted-foreground" htmlFor="displayName">
-              Display Name
-            </label>
+            <label className="text-sm text-muted-foreground" htmlFor="displayName">Display Name</label>
             <input
               id="displayName"
               type="text"
@@ -66,9 +124,7 @@ function SettingsPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm text-muted-foreground" htmlFor="phone">
-              Phone
-            </label>
+            <label className="text-sm text-muted-foreground" htmlFor="phone">Phone</label>
             <input
               id="phone"
               type="text"
@@ -81,62 +137,86 @@ function SettingsPage() {
 
           <div className="space-y-1.5">
             <div className="text-sm text-muted-foreground">Email</div>
-            <div className="text-sm font-medium text-foreground px-3 py-2.5">
-              {user?.email ?? "—"}
-            </div>
+            <div className="text-sm font-medium text-foreground px-3 py-2.5">{user?.email ?? "—"}</div>
           </div>
 
           <div className="space-y-1.5">
             <div className="text-sm text-muted-foreground">Account ID</div>
-            <div className="text-sm font-mono font-medium text-foreground px-3 py-2.5">
-              {user?.id ?? "—"}
-            </div>
+            <div className="text-sm font-mono font-medium text-foreground px-3 py-2.5 break-all">{user?.id ?? "—"}</div>
           </div>
 
           <button
             onClick={handleSaveProfile}
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2.5 hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2.5 hover:bg-primary/90 transition-colors disabled:opacity-60"
           >
             {saving ? "Saving…" : "Save Profile"}
           </button>
         </div>
       </Section>
 
+      {/* Security */}
       <Section title="Security" icon={Shield}>
         <Toggle
           icon={KeyRound}
           label="Two-factor authentication"
           desc="Require a code from your authenticator on every sign-in."
-          defaultOn
+          checked={securityPrefs.twoFactor}
+          onChange={(v) => updatePref("twoFactor", v)}
         />
         <Toggle
           icon={Fingerprint}
           label="Biometric unlock"
           desc="Use fingerprint or Face ID on supported devices."
-          defaultOn
+          checked={securityPrefs.biometric}
+          onChange={(v) => updatePref("biometric", v)}
         />
         <Toggle
           icon={Smartphone}
           label="Trusted devices only"
           desc="Block sign-ins from devices you haven't approved."
+          checked={securityPrefs.trustedDevices}
+          onChange={(v) => updatePref("trustedDevices", v)}
         />
+        <div className="pt-3">
+          <button
+            onClick={handleSaveSecurity}
+            disabled={savingSecurity}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2.5 hover:bg-primary/90 transition-colors disabled:opacity-60"
+          >
+            {savingSecurity ? "Saving…" : "Save Security Settings"}
+          </button>
+        </div>
       </Section>
 
+      {/* Notifications */}
       <Section title="Notifications" icon={Bell}>
         <Toggle
           icon={Bell}
           label="Plan reminders"
           desc="Monthly check-ins to keep your legacy plan current."
-          defaultOn
+          checked={securityPrefs.planReminders}
+          onChange={(v) => updatePref("planReminders", v)}
         />
         <Toggle
           icon={Bell}
           label="Caregiver activity"
           desc="Get notified when a caregiver updates a record."
+          checked={securityPrefs.caregiverActivity}
+          onChange={(v) => updatePref("caregiverActivity", v)}
         />
+        <div className="pt-3">
+          <button
+            onClick={handleSaveSecurity}
+            disabled={savingSecurity}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2.5 hover:bg-primary/90 transition-colors disabled:opacity-60"
+          >
+            {savingSecurity ? "Saving…" : "Save Notifications"}
+          </button>
+        </div>
       </Section>
 
+      {/* Data & Privacy */}
       <Section title="Data & Privacy" icon={ShieldCheck}>
         <div className="py-4">
           <DataRights />
@@ -177,15 +257,15 @@ function Toggle({
   icon: Icon,
   label,
   desc,
-  defaultOn,
+  checked,
+  onChange,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   desc: string;
-  defaultOn?: boolean;
+  checked: boolean;
+  onChange: (v: boolean) => void;
 }) {
-  const [checked, setChecked] = useState(!!defaultOn);
-
   return (
     <label className="py-3 grid grid-cols-[auto_minmax(0,1fr)_auto] gap-3 items-center cursor-pointer">
       <Icon className="h-4 w-4 text-muted-foreground" />
@@ -196,7 +276,7 @@ function Toggle({
       <input
         type="checkbox"
         checked={checked}
-        onChange={(e) => setChecked(e.target.checked)}
+        onChange={(e) => onChange(e.target.checked)}
         className="h-5 w-9 appearance-none rounded-full bg-surface-container relative cursor-pointer transition-colors checked:bg-primary before:absolute before:top-0.5 before:left-0.5 before:h-4 before:w-4 before:rounded-full before:bg-white before:transition-transform checked:before:translate-x-4"
       />
     </label>

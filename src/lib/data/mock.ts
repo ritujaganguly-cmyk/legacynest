@@ -1692,15 +1692,30 @@ export const dataService = {
 
   /* PROFILE UPDATE */
   async updateProfile(displayName: string, phone?: string): Promise<boolean> {
-    return safe(async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-      const { error } = await supabase.from("profiles")
-        .update({ full_name: displayName, phone: phone ?? null, updated_at: new Date().toISOString() })
-        .eq("id", user.id);
-      if (error) throw error;
-      return true;
-    }, false);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    const { error } = await supabase.from("profiles")
+      .upsert({
+        id: user.id,
+        full_name: displayName,
+        phone: phone ?? null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "id" });
+    if (error) {
+      // Try singular table name as fallback
+      const { error: error2 } = await supabase.from("profile")
+        .upsert({
+          id: user.id,
+          full_name: displayName,
+          phone: phone ?? null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "id" });
+      if (error2) {
+        console.error("[updateProfile] profiles:", error.message, "| profile:", error2.message);
+        throw new Error(error2.message);
+      }
+    }
+    return true;
   },
 
   /* VAULT DOCUMENT - add metadata */

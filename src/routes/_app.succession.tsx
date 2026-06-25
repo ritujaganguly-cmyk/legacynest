@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Heart, Users, FileText, CheckCircle, AlertCircle, Edit2, Trash2, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,7 +14,6 @@ export const Route = createFileRoute("/_app/succession")({
 
 function Succession() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [planDialogOpen, setPlanDialogOpen] = useState(false);
   const [guardianDialogOpen, setGuardianDialogOpen] = useState(false);
   const [assetDialogOpen, setAssetDialogOpen] = useState(false);
   const [instructionDialogOpen, setInstructionDialogOpen] = useState(false);
@@ -26,6 +25,19 @@ function Succession() {
   });
 
   const activePlan = plans.length > 0 ? plans[0] : null;
+
+  // Auto-create a default plan silently on first visit
+  useEffect(() => {
+    if (plans.length === 0) {
+      dataService.createSuccessionPlan({
+        title: "My Child's Succession Plan",
+        description: "Comprehensive plan for care continuity",
+        status: "Draft",
+        priority: "High",
+      }).then(() => qc.invalidateQueries({ queryKey: ["successionPlans"] }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plans.length]);
 
   return (
     <div className="space-y-12">
@@ -73,7 +85,7 @@ function Succession() {
           </TabsList>
 
           <TabsContent value="overview" className="pt-12">
-            <OverviewTab activePlan={activePlan} onNewPlan={() => setPlanDialogOpen(true)} />
+            <OverviewTab activePlan={activePlan} onNewPlan={() => {}} />
           </TabsContent>
 
           <TabsContent value="guardians" className="pt-12">
@@ -91,7 +103,6 @@ function Succession() {
       </div>
 
       {/* Dialogs */}
-      <NewPlanDialog open={planDialogOpen} onOpenChange={setPlanDialogOpen} />
       {activePlan && <NewGuardianDialog open={guardianDialogOpen} onOpenChange={setGuardianDialogOpen} planId={activePlan.id} />}
       {activePlan && <NewAssetDialog open={assetDialogOpen} onOpenChange={setAssetDialogOpen} planId={activePlan.id} />}
       {activePlan && <NewInstructionDialog open={instructionDialogOpen} onOpenChange={setInstructionDialogOpen} planId={activePlan.id} />}

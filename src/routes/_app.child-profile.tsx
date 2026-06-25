@@ -78,6 +78,8 @@ function ChildProfilePage() {
   const [profile, setProfile] = useState<ChildProfile>(emptyProfile);
   const [savingCard1, setSavingCard1] = useState(false);
   const [savingCard2, setSavingCard2] = useState(false);
+  const [savingCard3, setSavingCard3] = useState(false);
+  const [savingCard4, setSavingCard4] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasUdid, setHasUdid] = useState(false);
   const [udidFile, setUdidFile] = useState<File | null>(null);
@@ -102,12 +104,15 @@ function ChildProfilePage() {
 
   const p = (patch: Partial<ChildProfile>) => setProfile((prev) => ({ ...prev, ...patch }));
 
-  async function doSave(card: 1 | 2) {
+  async function doSave(card: 1 | 2 | 3 | 4) {
     if (card === 1 && !profile.name.trim()) {
       toast.error("Please enter your child's name.");
       return;
     }
-    card === 1 ? setSavingCard1(true) : setSavingCard2(true);
+    if (card === 1) setSavingCard1(true);
+    else if (card === 2) setSavingCard2(true);
+    else if (card === 3) setSavingCard3(true);
+    else setSavingCard4(true);
     try {
       const saved = await dataService.saveChildProfile(profile);
       if (!saved) throw new Error("Save returned null — check Supabase logs.");
@@ -128,7 +133,10 @@ function ChildProfilePage() {
       const msg = err instanceof Error ? err.message : "Failed to save. Please try again.";
       toast.error(msg);
     } finally {
-      card === 1 ? setSavingCard1(false) : setSavingCard2(false);
+      if (card === 1) setSavingCard1(false);
+      else if (card === 2) setSavingCard2(false);
+      else if (card === 3) setSavingCard3(false);
+      else setSavingCard4(false);
     }
   }
 
@@ -273,8 +281,8 @@ function ChildProfilePage() {
         </div>
       </Card>
 
-      {/* Card 2 — Care Details */}
-      <Card title="Health, Behaviour & Education" onSave={() => doSave(2)} saving={savingCard2}>
+      {/* Card 2 — Health & Medical */}
+      <Card title="Health & Medical" onSave={() => doSave(2)} saving={savingCard2}>
         <Field label="Allergies">
           <textarea rows={2} className={inputCls} value={profile.allergies || ""} onChange={(e) => p({ allergies: e.target.value })} placeholder="List any known allergies" />
         </Field>
@@ -284,6 +292,13 @@ function ChildProfilePage() {
         <Field label="Emergency Medical Info">
           <textarea rows={2} className={inputCls} value={profile.emergencyMedicalInfo || ""} onChange={(e) => p({ emergencyMedicalInfo: e.target.value })} placeholder="Critical info for emergency responders" />
         </Field>
+        <Field label="Dietary Requirements">
+          <textarea rows={2} className={inputCls} value={profile.dietaryRequirements || ""} onChange={(e) => p({ dietaryRequirements: e.target.value })} placeholder="Food allergies, restrictions, preferences" />
+        </Field>
+      </Card>
+
+      {/* Card 3 — Behaviour & Communication */}
+      <Card title="Behaviour & Communication" onSave={() => doSave(3)} saving={savingCard3}>
         <Field label="Communication Style">
           <select className={inputCls} value={profile.communicationStyle || ""} onChange={(e) => p({ communicationStyle: e.target.value })}>
             <option value="">Select</option>
@@ -296,9 +311,10 @@ function ChildProfilePage() {
         <Field label="Comfort Items / Calming Strategies">
           <textarea rows={2} className={inputCls} value={profile.comfortItems || ""} onChange={(e) => p({ comfortItems: e.target.value })} placeholder="What helps your child feel safe" />
         </Field>
-        <Field label="Dietary Requirements">
-          <textarea rows={2} className={inputCls} value={profile.dietaryRequirements || ""} onChange={(e) => p({ dietaryRequirements: e.target.value })} placeholder="Food allergies, restrictions, preferences" />
-        </Field>
+      </Card>
+
+      {/* Card 4 — Education & Government Schemes */}
+      <Card title="Education & Government Schemes" onSave={() => doSave(4)} saving={savingCard4}>
         <Field label="Current School">
           <input type="text" className={inputCls} value={profile.currentSchool || ""} onChange={(e) => p({ currentSchool: e.target.value })} placeholder="School name and location" />
         </Field>
@@ -308,15 +324,12 @@ function ChildProfilePage() {
         <Field label="IEP / Special Education Details">
           <textarea rows={2} className={inputCls} value={profile.iepDetails || ""} onChange={(e) => p({ iepDetails: e.target.value })} placeholder="Individualized Education Program details" />
         </Field>
-
         <div>
           <div className={labelCls}>Government Schemes Enrolled</div>
           <div className="space-y-2 mt-1">
             {GOVERNMENT_SCHEMES.map((scheme) => (
               <label key={scheme} className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-surface-low">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded accent-primary"
+                <input type="checkbox" className="h-4 w-4 rounded accent-primary"
                   checked={profile.enrolledSchemes.includes(scheme)}
                   onChange={() => p({
                     enrolledSchemes: profile.enrolledSchemes.includes(scheme)

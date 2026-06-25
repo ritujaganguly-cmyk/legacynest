@@ -341,9 +341,33 @@ function ResidentialPage() {
               </button>
             </div>
             {checklist.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Add your current home option first — a default safety checklist will be created automatically.
-              </p>
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 space-y-4">
+                <div>
+                  <h3 className="font-semibold text-foreground text-sm">How to use the Safety Checklist</h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    This checklist helps you make any home safe and accessible for your child.
+                    Work through it for your current home and any future care homes.
+                  </p>
+                </div>
+                <div className="space-y-2 text-xs text-muted-foreground">
+                  <div className="flex gap-2"><span className="text-primary font-bold shrink-0">1.</span><span><strong>Safety</strong> — Door sensors, medication locks, emergency contacts posted visibly</span></div>
+                  <div className="flex gap-2"><span className="text-primary font-bold shrink-0">2.</span><span><strong>Accessibility</strong> — Ramps, grab bars, widened doorways for your child's mobility needs</span></div>
+                  <div className="flex gap-2"><span className="text-primary font-bold shrink-0">3.</span><span><strong>Suitability</strong> — Is the caregiver trained? Does the environment suit your child's sensory needs?</span></div>
+                  <div className="flex gap-2"><span className="text-primary font-bold shrink-0">4.</span><span><strong>Transition</strong> — Steps to move your child to a new home smoothly and without distress</span></div>
+                </div>
+                <button
+                  onClick={async () => {
+                    for (const item of DEFAULT_CHECKLIST) {
+                      await dataService.addResidentialChecklistItem(item);
+                    }
+                    qc.invalidateQueries({ queryKey: ["residential-checklist"] });
+                    toast.success("Default safety checklist loaded. Tick items as you complete them.");
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2.5 text-sm hover:bg-primary/90 transition-colors"
+                >
+                  <ClipboardList className="h-4 w-4" /> Load Default Safety Checklist
+                </button>
+              </div>
             )}
           </div>
         )}

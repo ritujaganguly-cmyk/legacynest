@@ -123,8 +123,37 @@ function LegalPage() {
           <Scale className="h-6 w-6 text-primary" /> Legal Planning and Asset Protection
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Indian Succession Act � Guardians and Wards Act 1890 � RPWD Act 2016
+          Secure your child's future through a Will, Special Needs Trust, Guardianship and Power of Attorney.
+          Most families start without any of these — that's okay. Document what you have and plan the rest.
         </p>
+      </div>
+
+      {/* Acknowledgment banner */}
+      <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-amber-800">Don't have legal documents yet?</p>
+          <p className="text-xs text-amber-700 mt-0.5">
+            Most families with special-needs children haven't started. Tick this box to acknowledge the need
+            and we'll add it to your Action Plan as a priority item.
+          </p>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer shrink-0">
+          <input
+            type="checkbox"
+            checked={!!willDraft.willStatus && willDraft.willStatus !== "Not Started"}
+            onChange={(e) => {
+              if (e.target.checked) {
+                setWillDraft(d => ({ ...d, willStatus: "In Progress" }));
+                void dataService.markSectionComplete("legal");
+                toast.success("Added to your Action Plan. A lawyer consultation is your first step.");
+              } else {
+                setWillDraft(d => ({ ...d, willStatus: "Not Started" }));
+              }
+            }}
+            className="h-4 w-4 rounded accent-primary"
+          />
+          <span className="text-sm font-semibold text-amber-800">I understand — I will work on this</span>
+        </label>
       </div>
 
       {sections.map(({ key, icon: Icon, title, badge }) => (

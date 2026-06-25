@@ -7,13 +7,10 @@ import {
   TrendingUp, Plus, Edit2, Trash2, Loader2, ShieldAlert,
   CheckCircle2, AlertTriangle, Info, ChevronDown, ChevronUp, Settings,
 } from "lucide-react";
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend,
-} from "recharts";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { dataService, type FinancialExpenseRow, type FinancialIncomeRow, type FinancialAssumptionsRow, type FinancialAsset } from "@/lib/data/mock";
-import { runProjection, formatCrore, type FinancialExpense, type FinancialIncome, type Assumptions } from "@/lib/financial-projection";
+import { formatCrore } from "@/lib/financial-projection";
 
 export const Route = createFileRoute("/_app/financial")({
   head: () => ({ meta: [{ title: "Financial Planning — LegacyNest" }] }),
@@ -104,40 +101,10 @@ function Financial() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedAssumptions, derivedChildAge, derivedParentAge]);
 
-  // ── Projection ────────────────────────────────────────────
   const currentCorpus = useMemo(
     () => assets.reduce((s, a) => s + (a.currentValue ?? 0), 0),
     [assets]
   );
-
-  const projection = useMemo(() => {
-    if (expenses.length === 0 && income.length === 0) return null;
-    const expInput: FinancialExpense[] = expenses.map(e => ({
-      id: e.id, name: e.name, category: e.category,
-      monthlyAmount: e.monthlyAmount, inflationRate: e.inflationRate, phase3Only: e.phase3Only,
-    }));
-    const incInput: FinancialIncome[] = income.map(i => ({
-      id: i.id, name: i.name, incomeType: i.incomeType,
-      monthlyAmount: i.monthlyAmount, incrementRate: i.incrementRate,
-      survivesParents: i.survivesParents, endsAtRetirement: i.endsAtRetirement,
-    }));
-    const ass: Assumptions = { ...assumptions };
-    return runProjection(expInput, incInput, currentCorpus, ass);
-  }, [expenses, income, currentCorpus, assumptions]);
-
-  const transitionYear = assumptions.parentLifeExpectancy - assumptions.parentAge;
-
-  // chart data — sample every year
-  const chartData = useMemo(() => {
-    if (!projection) return [];
-    return projection.years.map(y => ({
-      age: y.childAge,
-      income: Math.round(y.annualIncome / 12),
-      expense: Math.round(y.annualExpense / 12),
-      corpus: Math.round(y.corpus / 100_000),
-      phase: y.phase,
-    }));
-  }, [projection]);
 
   // ── Expense dialog ────────────────────────────────────────
   const [expDialog, setExpDialog] = useState(false);
@@ -398,45 +365,7 @@ function Financial() {
         </div>
       )}
 
-      {/* Lifetime Projection Chart */}
-      {projection && chartData.length > 0 && (
-        <div className="legacy-card p-5">
-          <h3 className="font-semibold mb-1">Lifetime Corpus Projection</h3>
-          <p className="text-xs text-muted-foreground mb-4">
-            Corpus balance (₹ Lakh) vs child's age. Shaded area = Phase 3 (parents gone).
-          </p>
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="corpusGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#e07b2a" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#e07b2a" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="age" label={{ value: "Child's Age", position: "insideBottom", offset: -2, fontSize: 11 }} tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={v => `₹${v}L`} tick={{ fontSize: 11 }} width={62} />
-              <Tooltip
-                formatter={(v: number, name: string) =>
-                  name === "corpus" ? [`₹${v}L`, "Corpus"] :
-                  name === "income" ? [`₹${v.toLocaleString("en-IN")}/mo`, "Monthly Income"] :
-                  [`₹${v.toLocaleString("en-IN")}/mo`, "Monthly Expense"]}
-                labelFormatter={age => `Child age: ${age}`}
-              />
-              <Legend verticalAlign="top" height={28} iconSize={10} wrapperStyle={{ fontSize: 11 }} />
-              {/* Phase 3 start marker */}
-              <ReferenceLine
-                x={assumptions.childCurrentAge + transitionYear}
-                stroke="#ef4444"
-                strokeDasharray="4 2"
-                label={{ value: "Parents gone", position: "top", fontSize: 10, fill: "#ef4444" }}
-              />
-              <Area type="monotone" dataKey="corpus" name="corpus"
-                stroke="#e07b2a" strokeWidth={2} fill="url(#corpusGrad)" dot={false} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      {/* Lifetime Projection Chart — removed, will revisit */}
 
       {/* Input Tabs */}
       <div className="legacy-card overflow-hidden">

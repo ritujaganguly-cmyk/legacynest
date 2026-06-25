@@ -58,11 +58,15 @@ function SettingsPage() {
   useEffect(() => {
     if (!user) return;
     setSecurityPrefs(loadSecurityPrefs(user.id));
-
+    // Display name is stored in localStorage (separate from parent_profile.full_name)
+    try {
+      const saved = localStorage.getItem(`legacynest.displayname.${user.id}`);
+      if (saved) setDisplayName(saved);
+    } catch { /* ignore */ }
+    // Phone comes from parent profile
     dataService.getParentProfile().then((p) => {
       if (p) {
         const profile = p as Record<string, unknown>;
-        if (profile.full_name) setDisplayName(profile.full_name as string);
         if (profile.phone) setPhone(profile.phone as string);
       }
     });
@@ -71,7 +75,12 @@ function SettingsPage() {
   async function handleSaveProfile() {
     setSaving(true);
     try {
-      await dataService.updateProfile(displayName, phone || undefined);
+      // Save display name to localStorage only — does NOT overwrite parent_profile.full_name
+      if (user) {
+        try { localStorage.setItem(`legacynest.displayname.${user.id}`, displayName); } catch { /* ignore */ }
+      }
+      // Save phone to parent_profile only
+      if (phone) await dataService.updateProfile("", phone);
       toast.success("Profile updated successfully.");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save profile.";

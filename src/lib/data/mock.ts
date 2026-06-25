@@ -343,6 +343,7 @@ export type FinancialExpenseRow = {
   monthlyAmount: number;
   inflationRate: number;
   phase3Only: boolean;
+  waivedAfterParents: boolean;
 };
 
 export type FinancialIncomeRow = {
@@ -1690,18 +1691,17 @@ export const dataService = {
     }, false);
   },
 
-  /* PROFILE UPDATE — writes phone to protected.parent_profile only.
-     full_name is NOT touched here — use saveParentProfile for that. */
-  async updateProfile(displayName: string, phone?: string): Promise<boolean> {
+  /* PROFILE UPDATE — updates phone only in protected.parent_profile.
+     full_name is NEVER touched here — it belongs to saveParentProfile. */
+  async updateProfile(_displayName: string, phone?: string): Promise<boolean> {
+    if (!phone) return true;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Not authenticated");
-    // Only update phone; never overwrite full_name from the settings page
-    if (!phone) return true;
+    // Use UPDATE (not upsert) to avoid NOT NULL violation on full_name
+    // when a parent_profile row doesn't exist yet.
     const { error } = await pdb.from("parent_profile")
-      .upsert({
-        user_id: user.id,
-        phone: phone,
-      }, { onConflict: "user_id" });
+      .update({ phone })
+      .eq("user_id", user.id);
     if (error) {
       console.error("[updateProfile]", error.message);
       throw new Error(error.message);
@@ -1887,9 +1887,9 @@ export const dataService = {
     }, []);
   },
   async addFinancialAsset(asset: Omit<FinancialAsset, "id" | "userId">): Promise<FinancialAsset | null> {
-    return safe(async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("not authenticated");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("not authenticated");
+    {
       const { data, error } = await pdb.from("financial_assets")
         .insert({
           user_id: user.id,
@@ -1906,7 +1906,10 @@ export const dataService = {
           notes: asset.notes ?? null,
         })
         .select().single();
-      if (error) throw error;
+      if (error) {
+        console.error("[addFinancialAsset]", error.message);
+        throw new Error(error.message);
+      }
       const r = data as Record<string, unknown>;
       return {
         id: r.id as string, userId: r.user_id as string,
@@ -1914,7 +1917,7 @@ export const dataService = {
         currentValue: r.current_value != null ? Number(r.current_value) : undefined,
         nomineeName: r.nominee_name as string | undefined,
       };
-    }, null);
+    }
   },
   async updateFinancialAsset(id: string, asset: Partial<Omit<FinancialAsset, "id" | "userId">>): Promise<FinancialAsset | null> {
     return safe(async () => {
@@ -1961,23 +1964,27 @@ export const dataService = {
         id: r.id as string, userId: r.user_id as string, name: r.name as string,
         category: r.category as string, monthlyAmount: Number(r.monthly_amount),
         inflationRate: Number(r.inflation_rate), phase3Only: Boolean(r.phase3_only),
+        waivedAfterParents: Boolean(r.waived_after_parents),
       }));
     }, []);
   },
   async addFinancialExpense(row: Omit<FinancialExpenseRow, "id" | "userId">): Promise<FinancialExpenseRow | null> {
-    return safe(async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("not authenticated");
-      const { data, error } = await pdb.from("financial_expenses")
-        .insert({ user_id: user.id, name: row.name, category: row.category,
-          monthly_amount: row.monthlyAmount, inflation_rate: row.inflationRate, phase3_only: row.phase3Only })
-        .select().single();
-      if (error) throw error;
-      const r = data as Record<string, unknown>;
-      return { id: r.id as string, userId: r.user_id as string, name: r.name as string,
-        category: r.category as string, monthlyAmount: Number(r.monthly_amount),
-        inflationRate: Number(r.inflation_rate), phase3Only: Boolean(r.phase3_only) };
-    }, null);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("not authenticated");
+    const { data, error } = await pdb.from("financial_expenses")
+      .insert({ user_id: user.id, name: row.name, category: row.category,
+        monthly_amount: row.monthlyAmount, inflation_rate: row.inflationRate,
+        phase3_only: row.phase3Only, waived_after_parents: row.waivedAfterParents ?? false })
+      .select().single();
+    if (error) {
+      console.error("[addFinancialExpense]", error.message);
+      throw new Error(error.message);
+    }
+    const r = data as Record<string, unknown>;
+    return { id: r.id as string, userId: r.user_id as string, name: r.name as string,
+      category: r.category as string, monthlyAmount: Number(r.monthly_amount),
+      inflationRate: Number(r.inflation_rate), phase3Only: Boolean(r.phase3_only),
+      waivedAfterParents: Boolean(r.waived_after_parents) };
   },
   async updateFinancialExpense(id: string, row: Partial<Omit<FinancialExpenseRow, "id" | "userId">>): Promise<boolean> {
     return safe(async () => {
@@ -1987,6 +1994,7 @@ export const dataService = {
       if (row.monthlyAmount !== undefined) patch.monthly_amount = row.monthlyAmount;
       if (row.inflationRate !== undefined) patch.inflation_rate = row.inflationRate;
       if (row.phase3Only !== undefined) patch.phase3_only = row.phase3Only;
+      if (row.waivedAfterParents !== undefined) patch.waived_after_parents = row.waivedAfterParents;
       const { error } = await pdb.from("financial_expenses").update(patch).eq("id", id);
       if (error) throw error;
       return true;

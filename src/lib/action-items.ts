@@ -125,12 +125,13 @@ export function generateActionItems(input: ActionItemsInput): {
     });
   }
 
-  // Child approaching 18 — urgent guardianship
-  if (childAge !== null && childAge >= 15 && childAge < 18 &&
+  // Guardianship — child within 6 months of 18 → SHORT TERM urgent
+  if (childAge !== null && childAge >= 17.5 && childAge < 18 &&
       (!input.guardianshipStatus || input.guardianshipStatus === "Not Initiated")) {
+    const monthsLeft = Math.round((18 - childAge) * 12);
     short.push({
-      title: `START GUARDIANSHIP NOW — child turns 18 in ${18 - childAge} year(s)`,
-      detail: `Legal guardianship under RPWD Act 2016 requires a court process taking 2+ years. File immediately.`,
+      title: `START GUARDIANSHIP NOW — child turns 18 in ${monthsLeft} month(s)`,
+      detail: `Legal guardianship under RPWD Act 2016 requires a court process taking 1–2 years. File IMMEDIATELY — you are almost out of time.`,
       urgent: true,
       horizon: "short",
       source: "Legal",
@@ -179,13 +180,25 @@ export function generateActionItems(input: ActionItemsInput): {
     });
   }
 
-  // Guardianship — child under 15
-  if (childAge !== null && childAge < 15 &&
+  // Guardianship — child 16–17.5 (within 2 years of 18) → MEDIUM
+  if (childAge !== null && childAge >= 16 && childAge < 17.5 &&
       (!input.guardianshipStatus || input.guardianshipStatus === "Not Initiated")) {
     medium.push({
-      title: `Start legal guardianship process by age ${Math.max((childAge ?? 0) + 2, 16)}`,
-      detail: `${childLabel} is ${childAge} now. File for guardianship under RPWD Act 2016 at least 2 years before they turn 18. Court process takes 1–2 years.`,
+      title: `File for legal guardianship now — child turns 18 in ${Math.round((18 - childAge) * 12)} months`,
+      detail: `Court process takes 1–2 years under RPWD Act 2016. File immediately to ensure guardianship is in place before ${childLabel} turns 18.`,
+      urgent: true,
       horizon: "medium",
+      source: "Legal",
+    });
+  }
+
+  // Guardianship — child under 16 → LONG TERM
+  if (childAge !== null && childAge < 16 &&
+      (!input.guardianshipStatus || input.guardianshipStatus === "Not Initiated")) {
+    long.push({
+      title: `Plan legal guardianship — file when child is 16`,
+      detail: `${childLabel} is ${childAge} now. Start the RPWD Act 2016 guardianship process at age 16 so it completes before they turn 18. Court process takes 1–2 years.`,
+      horizon: "long",
       source: "Legal",
     });
   }

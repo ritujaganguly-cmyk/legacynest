@@ -110,7 +110,8 @@ function Financial() {
     if (expenses.length === 0 && income.length === 0) return null;
     const expInput: FinancialExpense[] = expenses.map(e => ({
       id: e.id, name: e.name, category: e.category,
-      monthlyAmount: e.monthlyAmount, inflationRate: e.inflationRate, phase3Only: e.phase3Only,
+      monthlyAmount: e.monthlyAmount, inflationRate: e.inflationRate,
+      phase3Only: e.phase3Only, waivedAfterParents: e.waivedAfterParents,
     }));
     const incInput: FinancialIncome[] = income.map(i => ({
       id: i.id, name: i.name, incomeType: i.incomeType,
@@ -130,7 +131,7 @@ function Financial() {
   const [expSaving, setExpSaving] = useState(false);
 
   const openExpAdd = () => {
-    setExpDraft({ category: "Daily Living", inflationRate: 6, phase3Only: false, monthlyAmount: 0 });
+    setExpDraft({ category: "Daily Living", inflationRate: 6, phase3Only: false, waivedAfterParents: false, monthlyAmount: 0 });
     setExpEdit(null); setExpDialog(true);
   };
   const openExpEdit = (e: FinancialExpenseRow) => {
@@ -477,10 +478,10 @@ function Financial() {
                       <td className="py-3 text-center text-muted-foreground text-xs">{e.inflationRate}%</td>
                       <td className="py-3 text-center">
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          (e as any).waivedAfterParents ? "bg-blue-50 text-blue-700" :
+                          e.waivedAfterParents ? "bg-amber-100 text-amber-800" :
                           e.phase3Only ? "bg-amber-50 text-amber-700" : "bg-green-50 text-green-700"
                         }`}>
-                          {(e as any).waivedAfterParents ? "Waived after" : e.phase3Only ? "Added after" : "Always"}
+                          {e.waivedAfterParents ? "Waived after" : e.phase3Only ? "Added after" : "Always"}
                         </span>
                       </td>
                       <td className="py-3 pr-4 flex gap-1 justify-end">
@@ -743,13 +744,13 @@ function Financial() {
                 </div>
               </div>
             </label>
-            <label className="flex items-start gap-3 cursor-pointer rounded-lg border border-blue-200 bg-blue-50 p-3">
+            <label className="flex items-start gap-3 cursor-pointer rounded-lg border border-amber-300 bg-amber-100 p-3">
               <input type="checkbox" className="mt-0.5 accent-primary"
-                checked={(expDraft as any).waivedAfterParents ?? false}
+                checked={expDraft.waivedAfterParents ?? false}
                 onChange={e => setExpDraft(d => ({ ...d, waivedAfterParents: e.target.checked, phase3Only: false }))} />
               <div>
-                <div className="text-sm font-medium text-blue-900">Waived after parents gone</div>
-                <div className="text-xs text-blue-700 mt-0.5">
+                <div className="text-sm font-medium text-amber-900">Waived after parents gone</div>
+                <div className="text-xs text-amber-800 mt-0.5">
                   Costs that disappear after parents die (e.g. school transport if child won't attend, activities parents personally run).
                 </div>
               </div>
@@ -810,15 +811,7 @@ function Financial() {
                   <div className="text-xs text-muted-foreground">Rental, pension, annuity</div>
                 </div>
               </label>
-              <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-border p-3">
-                <input type="checkbox" className="accent-primary"
-                  checked={incDraft.endsAtRetirement ?? false}
-                  onChange={e => setIncDraft(d => ({ ...d, endsAtRetirement: e.target.checked }))} />
-                <div>
-                  <div className="text-sm font-medium">Ends at retirement</div>
-                  <div className="text-xs text-muted-foreground">Salary, employment</div>
-                </div>
-              </label>
+              {/* "Ends at retirement" removed — child income model doesn't use parent retirement */}
             </div>
             <div className="flex justify-end gap-2 pt-1">
               <button onClick={() => setIncDialog(false)} className="rounded-lg px-4 py-2 text-sm border border-border hover:bg-surface-low">Cancel</button>

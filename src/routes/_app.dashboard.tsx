@@ -231,14 +231,6 @@ function Dashboard() {
         </div>
       )}
 
-      {/* ── Action Items — always visible ── */}
-      {!loading && Object.keys(actionInput).length > 0 && (
-        <ActionableItems
-          input={actionInput}
-          storageKey={`legacynest.actionitems.${userId}.v1`}
-        />
-      )}
-
       {/* ── Journey Map (only when not complete) ── */}
       {!loading && !allDone && (
       <div>
@@ -341,7 +333,7 @@ function Dashboard() {
       </div>
       )} {/* end journey map conditional */}
 
-      {/* ── Generate report (bottom, only when not complete — complete has it in the card) ── */}
+      {/* ── Partial plan download (only when not complete) ── */}
       {!loading && numDone >= 5 && !allDone && (
         <div className="legacy-card p-4 flex items-center justify-between gap-4">
           <div>
@@ -359,6 +351,14 @@ function Dashboard() {
             {generating ? "Generating…" : "Download Draft"}
           </button>
         </div>
+      )}
+
+      {/* ── Action Items — always visible, after partial plan ── */}
+      {!loading && Object.keys(actionInput).length > 0 && (
+        <ActionableItems
+          input={actionInput}
+          storageKey={`legacynest.actionitems.${userId}.v1`}
+        />
       )}
 
     </div>

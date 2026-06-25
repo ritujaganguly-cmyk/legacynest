@@ -1642,18 +1642,22 @@ export const dataService = {
 
   /* PROFILE IMAGES — public schema */
   async getProfileImage(entityType: string, entityId: string): Promise<string | null> {
-    return safe(async () => {
+    try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profile_images")
         .select("image_data")
         .eq("user_id", user.id)
         .eq("entity_type", entityType)
         .eq("entity_id", entityId)
-        .single();
+        .maybeSingle();
+      if (error) { console.warn("[getProfileImage]", error.message); return null; }
       return data ? (data as { image_data: string }).image_data : null;
-    }, null);
+    } catch (e) {
+      console.warn("[getProfileImage]", e);
+      return null;
+    }
   },
 
   async saveProfileImage(entityType: string, entityId: string, dataUrl: string, sizeBytes: number): Promise<boolean> {

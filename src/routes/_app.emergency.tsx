@@ -383,29 +383,31 @@ function EmergencyPage() {
             className="inline-flex items-center gap-2 rounded-lg bg-amber-600 text-white font-semibold px-4 py-2.5 text-sm hover:bg-amber-700">
             <ClipboardCheck className="h-4 w-4" /> Run Simulation
           </button>
-          <button onClick={() => setEditOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2.5 text-sm hover:bg-primary/90">
-            <Edit3 className="h-4 w-4" /> Edit Plan
-          </button>
         </div>
       </div>
 
-      {/* Activation banner */}
-      <div className={`rounded-2xl border p-4 flex items-center justify-between gap-4 ${isActive ? "bg-red-50 border-red-300" : "bg-surface-low border-border"}`}>
+      {/* Activation banner — always at top, prominent */}
+      <div className={`rounded-2xl border-2 p-5 flex items-center justify-between gap-4 ${isActive ? "bg-red-50 border-red-400" : "bg-red-50 border-red-200"}`}>
         <div className="flex items-center gap-3">
-          <span className={`h-3 w-3 rounded-full ${isActive ? "bg-red-500 animate-pulse" : "bg-green-500"}`} />
+          <span className={`h-4 w-4 rounded-full shrink-0 ${isActive ? "bg-red-500 animate-pulse" : "bg-red-300"}`} />
           <div>
-            <div className={`font-bold ${isActive ? "text-red-700" : "text-foreground"}`}>
-              {isActive ? "PLAN ACTIVE" : "Plan on Standby"}
+            <div className={`font-bold text-lg ${isActive ? "text-red-700" : "text-red-800"}`}>
+              {isActive ? "🔴 EMERGENCY PLAN ACTIVE" : "Activate Emergency Plan"}
             </div>
-            <div className="text-xs text-muted-foreground">
-              {isActive && plan?.activatedAt ? `Activated ${new Date(plan.activatedAt).toLocaleString("en-IN")}` : "Ready to activate when needed"}
+            <div className="text-xs text-red-600/80">
+              {isActive && plan?.activatedAt
+                ? `Activated ${new Date(plan.activatedAt).toLocaleString("en-IN")} — all coordinators have been notified`
+                : "Press only in a real emergency — this notifies your coordinator and activates all protocols"}
             </div>
           </div>
         </div>
         <button onClick={toggleActivation}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold ${isActive ? "border border-border hover:bg-card" : "bg-red-600 text-white hover:bg-red-700"}`}>
-          {isActive ? "Stand Down" : "Activate Plan"}
+          className={`shrink-0 rounded-lg px-5 py-2.5 text-sm font-bold transition-colors ${
+            isActive
+              ? "border-2 border-red-300 text-red-700 hover:bg-red-100"
+              : "bg-red-600 text-white hover:bg-red-700 shadow-md"
+          }`}>
+          {isActive ? "Stand Down" : "🚨 Activate Emergency"}
         </button>
       </div>
 

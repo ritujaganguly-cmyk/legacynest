@@ -87,26 +87,12 @@ function Caregiver() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-2xl">
-          <h1 className="text-4xl font-bold text-primary">Caregiver Succession Planning</h1>
-          <p className="mt-3 text-muted-foreground">
-            Ensure your child's future is anchored in trusted hands. Define the hierarchy of care
-            and verify readiness for those who will follow in your footsteps.
-          </p>
-        </div>
-        <div className="legacy-card p-4 w-72 flex items-center gap-4">
-          <Ring78 percentage={readinessScore} />
-          <div>
-            <div className="font-semibold">Readiness Score</div>
-            <div className="text-xs text-muted-foreground">
-              {pendingCount} Guardian{pendingCount !== 1 ? "s" : ""} Pending
-            </div>
-            <button onClick={() => setPlanDialogOpen(true)} className="mt-1 text-sm font-semibold text-primary">
-              {activePlan ? "View Plan →" : "Create Plan →"}
-            </button>
-          </div>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-primary">Caregiver Succession Planning</h1>
+        <p className="mt-2 text-muted-foreground">
+          Ensure your child's future is anchored in trusted hands. Define the hierarchy of care
+          and verify readiness for those who will follow in your footsteps.
+        </p>
       </div>
 
       <div className="rounded-xl border-l-4 border-warning bg-warning-soft/60 p-5 flex items-start gap-3">
@@ -343,12 +329,12 @@ function GuardianDialog({ open, onOpenChange, planId, mode, guardian }: Guardian
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg p-0">
+      <DialogContent className="max-w-lg p-0 max-h-[90vh] flex flex-col">
         <DialogTitle className="sr-only">{mode === "edit" ? "Edit Guardian" : "Add Guardian"}</DialogTitle>
-        <div className="bg-card border-b border-border px-6 py-4">
+        <div className="bg-card border-b border-border px-6 py-4 shrink-0">
           <h2 className="text-lg font-semibold">{mode === "edit" ? "Edit Guardian" : "Add Guardian"}</h2>
         </div>
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <Field label="Full Name *">
             <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name" className={inputCls} />
           </Field>

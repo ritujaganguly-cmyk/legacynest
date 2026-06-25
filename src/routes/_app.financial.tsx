@@ -151,6 +151,9 @@ function Financial() {
       }
       qc.invalidateQueries({ queryKey: ["fin-expenses"] });
       setExpDialog(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Could not save expense.";
+      toast.error(msg);
     } finally { setExpSaving(false); }
   };
 
@@ -212,6 +215,9 @@ function Financial() {
       }
       qc.invalidateQueries({ queryKey: ["financial-assets"] });
       setAssetDialog(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Could not save asset.";
+      toast.error(msg);
     } finally { setAssetSaving(false); }
   };
 

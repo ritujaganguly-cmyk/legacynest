@@ -1690,30 +1690,19 @@ export const dataService = {
     }, false);
   },
 
-  /* PROFILE UPDATE */
+  /* PROFILE UPDATE — writes to protected.parent_profile */
   async updateProfile(displayName: string, phone?: string): Promise<boolean> {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-    const { error } = await supabase.from("profiles")
+    if (!user) throw new Error("Not authenticated");
+    const { error } = await pdb.from("parent_profile")
       .upsert({
-        id: user.id,
+        user_id: user.id,
         full_name: displayName,
         phone: phone ?? null,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "id" });
+      }, { onConflict: "user_id" });
     if (error) {
-      // Try singular table name as fallback
-      const { error: error2 } = await supabase.from("profile")
-        .upsert({
-          id: user.id,
-          full_name: displayName,
-          phone: phone ?? null,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "id" });
-      if (error2) {
-        console.error("[updateProfile] profiles:", error.message, "| profile:", error2.message);
-        throw new Error(error2.message);
-      }
+      console.error("[updateProfile]", error.message);
+      throw new Error(error.message);
     }
     return true;
   },

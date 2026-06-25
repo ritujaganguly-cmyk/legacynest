@@ -9,7 +9,8 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   );
 }
 
-// Base client — auth, storage, RPC, and public schema queries
+// Primary client — auth, storage, RPC, and public schema queries.
+// This is the single source of truth for authentication.
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
@@ -19,13 +20,31 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 // Protected schema client — SPDI data (medical, financial, legal, etc.)
-// Uses db.schema option for broader supabase-js version compatibility.
-// anon role has zero access; authenticated users see only their own rows via RLS
+// Does NOT create a new GoTrueClient (persistSession: false, autoRefreshToken: false).
+// Auth token is synced from the primary `supabase` client via onAuthStateChange.
+// This avoids the "Multiple GoTrueClient instances" conflict.
 export const pdb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    storageKey: "legacynest.supabase.auth",
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
   },
   db: { schema: "protected" },
+});
+
+// Keep pdb's auth token in sync with the primary supabase client.
+// This runs once on module load and stays active for the app lifetime.
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (session) {
+    pdb.auth.setSession(session);
+  } else {
+    pdb.auth.signOut();
+  }
+});
+
+// Also sync the current session immediately (in case user is already logged in).
+supabase.auth.getSession().then(({ data }) => {
+  if (data.session) {
+    pdb.auth.setSession(data.session);
+  }
 });

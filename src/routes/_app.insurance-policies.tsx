@@ -157,8 +157,30 @@ function InsurancePoliciesPage() {
             ))}
           </div>
         ) : policies.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            No insurance policies recorded yet. <button onClick={openAdd} className="text-primary hover:underline">Add your first policy</button>.
+          <div className="p-6 space-y-4">
+            <p className="text-center text-sm text-muted-foreground">
+              No insurance policies recorded yet. <button onClick={openAdd} className="text-primary hover:underline">Add your first policy</button>.
+            </p>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-800">Don't have insurance right now?</p>
+                <p className="text-xs text-amber-700 mt-0.5">That's okay. Tick this box to acknowledge the chapter and we'll add a reminder to your Action Items.</p>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded accent-primary"
+                  onChange={async (e) => {
+                    if (e.target.checked) {
+                      await dataService.markSectionComplete("insurance");
+                      qc.invalidateQueries({ queryKey: ["plan-progress"] });
+                      toast.success("Insurance chapter marked — check Action Items for recommendations.");
+                    }
+                  }}
+                />
+                <span className="text-sm font-semibold text-amber-800">I acknowledge — will work on this</span>
+              </label>
+            </div>
           </div>
         ) : (
           <div className="divide-y divide-border">

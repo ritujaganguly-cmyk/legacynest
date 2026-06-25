@@ -70,13 +70,7 @@ export const CHAPTERS: Chapter[] = [
     why: "Without legal documents, courts decide your child's future.",
   },
   {
-    num: 10, key: "vault", title: "Digital Vault",
-    subtitle: "Upload and secure every critical document in one place",
-    route: "/vault", minutes: 10,
-    why: "Successors need instant access to the right papers at the right time.",
-  },
-  {
-    num: 11, key: "emergency", title: "Emergency Plan",
+    num: 10, key: "emergency", title: "Emergency Plan",
     subtitle: "Who acts first and what they must know in 24 hours",
     route: "/emergency", minutes: 15,
     why: "With everything documented, now activate your emergency safety net.",
@@ -98,7 +92,6 @@ export function buildCompletionMap(
     insurance:    !!progress["insurance"],
     financial:    !!progress["financial"],
     legal:        !!progress["legal"],
-    vault:        !!progress["vault"],
     emergency:    !!progress["emergency"],
   };
 }
@@ -176,9 +169,9 @@ export const JOURNEY_STAGES: JourneyStage[] = [
   {
     num: 3,
     label: "Eternal Banyan",
-    tagline: "Legal protection, vault secured, emergency plan active. Your legacy stands.",
+    tagline: "Legal protection and emergency plan active. Your legacy stands.",
     image: "stage-4-banyan.png",
-    completeWhen: ["legal", "vault", "emergency"],
+    completeWhen: ["legal", "emergency"],
   },
 ];
 

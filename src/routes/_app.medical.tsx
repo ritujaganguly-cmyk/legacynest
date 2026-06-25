@@ -1275,6 +1275,28 @@ function Medical() {
     <div className="space-y-12">
       <ChapterBanner chapterKey="medical" />
       <SPDINotice section="medical" />
+
+      {/* Mark complete if no medical records needed */}
+      <div className="rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-blue-800">No medical records to add right now?</p>
+          <p className="text-xs text-blue-700 mt-0.5">If your child has no current appointments or medications, tick this to mark the chapter complete and move forward.</p>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer shrink-0">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded accent-primary"
+            onChange={async (e) => {
+              if (e.target.checked) {
+                await dataService.markSectionComplete("medical");
+                toast.success("Medical chapter acknowledged — add records any time.");
+              }
+            }}
+          />
+          <span className="text-sm font-semibold text-blue-800">Mark as acknowledged</span>
+        </label>
+      </div>
+
       {/* Header with Stats */}
       <div className="space-y-4">
         {/* Title Section */}

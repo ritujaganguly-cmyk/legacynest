@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   CheckCircle2, Circle, ArrowRight, Map, Clock,
-  ChevronRight, FileDown, RefreshCw
+  ChevronRight, FileDown, RefreshCw, Heart,
 } from "lucide-react";
 import { dataService } from "@/lib/data/mock";
 import { generateSuccessionReport } from "@/lib/report";
@@ -13,6 +13,8 @@ import {
 } from "@/lib/journey";
 import { JourneyStageCard } from "@/components/journey/JourneyStageCard";
 import { ActionableItems } from "@/components/journey/ActionableItems";
+import { supabase } from "@/integrations/supabase/client";
+import stage4 from "@/assets/journey/stage-4-banyan.png";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({ meta: [{ title: "My Journey — LegacyNest" }] }),
@@ -47,18 +49,58 @@ function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [pinnedKey, setPinned] = useState<string | null>(() => getPinnedKey());
+  const [userId, setUserId] = useState("");
+
+  // Extra data for action items
+  const [actionInput, setActionInput] = useState<import("@/lib/action-items").ActionItemsInput>({});
 
   async function load(showRefreshing = false) {
     if (showRefreshing) setRefreshing(true);
     try {
-      const [child, parent, progress] = await Promise.all([
+      const [child, parent, progress, will, residentialOpts, policies, emergencyPlan, { data: authData }] = await Promise.all([
         dataService.getChildProfile(),
         dataService.getParentProfile(),
         dataService.refreshPlanProgress(),
+        dataService.getLegalWill().catch(() => null),
+        dataService.listResidentialOptions().catch(() => []),
+        dataService.listInsurancePolicies().catch(() => []),
+        dataService.getEmergencyPlan().catch(() => null),
+        supabase.auth.getUser(),
       ]);
+
+      if (authData.user) setUserId(authData.user.id);
       setChildName(child?.name ?? "");
       setParentName((parent as { full_name?: string } | null)?.full_name ?? "");
-      setDone(buildCompletionMap(progress, !!child?.name));
+      const completionMap = buildCompletionMap(progress, !!child?.name);
+      setDone(completionMap);
+
+      // Build action items input
+      const hasPrimary = (residentialOpts ?? []).some((o: { successionRank?: string }) => o.successionRank === "Primary");
+      const waitlistsNotApplied = (residentialOpts ?? []).filter((o: { waitlistStatus?: string }) => o.waitlistStatus === "Not Applied").length;
+      const hasNiramaya = (policies ?? []).some((p: { policyType?: string }) => p.policyType?.toLowerCase().includes("niramaya"));
+      const niramayaPolicy = (policies ?? []).find((p: { policyType?: string }) => p.policyType?.toLowerCase().includes("niramaya"));
+      const careCircle = await dataService.listCareCircle().catch(() => []);
+
+      setActionInput({
+        childName: child?.name,
+        childDob: child?.dateOfBirth,
+        udidNumber: child?.udidNumber,
+        udidValidity: child?.udidValidity,
+        disabilityType: child?.disabilityType,
+        coordinatorName: emergencyPlan?.coordinatorName,
+        willStatus: will?.willStatus,
+        hasPrimary,
+        waitlistsNotApplied,
+        hasNiramaya,
+        niramayaRenewalDate: (niramayaPolicy as { renewalReminderDate?: string } | undefined)?.renewalReminderDate,
+        careCircleCount: careCircle.length,
+        insurancePolicies: (policies ?? []).map((p: { policyType?: string; providerName?: string; renewalReminderDate?: string }) => ({
+          policyType: p.policyType ?? "",
+          providerName: p.providerName ?? "",
+          renewalReminderDate: p.renewalReminderDate,
+        })),
+        done: completionMap,
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -125,19 +167,50 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* ── Stage card ── */}
-      {!loading && !allDone && (
-        <JourneyStageCard stageNum={stage} done={done} childName={childName} />
+      {/* ── Stage card OR Completion card ── */}
+      {!loading && (
+        allDone ? (
+          <div className="rounded-2xl border border-primary/20 bg-gradient-to-b from-amber-50 to-amber-100 overflow-hidden">
+            <div className="flex items-center gap-5 px-5 py-5">
+              <img src={stage4} alt="Eternal Banyan" className="h-20 w-20 object-contain shrink-0" />
+              <div className="flex-1">
+                <div className="text-xs font-bold text-amber-700 uppercase tracking-widest mb-1">Stage 4 of 4 — Eternal Banyan</div>
+                <h2 className="text-lg font-bold text-foreground leading-snug">
+                  {childName ? `${childName}'s plan is complete` : "Your plan is complete"} 🌳
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  All 10 chapters done. You have built a lifetime of protection.
+                  Review every 6–12 months to keep it current as life changes.
+                </p>
+                <div className="mt-3 flex items-center gap-3 flex-wrap">
+                  <button
+                    onClick={async () => { setGenerating(true); try { await generateSuccessionReport(); } finally { setGenerating(false); } }}
+                    disabled={generating}
+                    className="inline-flex items-center gap-2 rounded-lg border border-primary px-4 py-2 text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
+                  >
+                    <FileDown className="h-4 w-4" />
+                    {generating ? "Generating…" : "Download Full Plan"}
+                  </button>
+                  <span className="text-xs text-amber-700 flex items-center gap-1">
+                    <Heart className="h-3.5 w-3.5" /> You are not walking this path alone.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <JourneyStageCard stageNum={stage} done={done} childName={childName} />
+        )
       )}
 
       {/* ── Encouragement ── */}
-      {!loading && (
+      {!loading && !allDone && (
         <div className="text-sm text-muted-foreground italic border-l-2 border-primary/30 pl-4 py-1">
           {encouragement(numDone, childName)}
         </div>
       )}
 
-      {/* ── Today's Focus ── */}
+      {/* ── Today's Focus (only when not complete) ── */}
       {!loading && !allDone && (
         <div className="legacy-card legacy-card-accent-top p-5">
           <div className="text-[10px] font-bold tracking-widest text-primary uppercase mb-2">
@@ -149,10 +222,8 @@ function Dashboard() {
             <Clock className="h-3 w-3" /> ~{next.minutes} minutes
           </p>
           <div className="flex items-center gap-3">
-            <Link
-              to={next.route as never}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary-deep transition-colors"
-            >
+            <Link to={next.route as never}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary-deep transition-colors">
               Open Chapter {next.num} <ArrowRight className="h-4 w-4" />
             </Link>
             <span className="text-xs text-muted-foreground">{next.why}</span>
@@ -160,24 +231,16 @@ function Dashboard() {
         </div>
       )}
 
-      {/* ── Actionable items (when journey complete) ── */}
-      {!loading && allDone && (
-        <ActionableItems childName={childName} />
+      {/* ── Action Items — always visible ── */}
+      {!loading && Object.keys(actionInput).length > 0 && (
+        <ActionableItems
+          input={actionInput}
+          storageKey={`legacynest.actionitems.${userId}.v1`}
+        />
       )}
 
-      {/* Download plan (always visible when all done) */}
-      {!loading && allDone && (
-        <button
-          onClick={async () => { setGenerating(true); try { await generateSuccessionReport(); } finally { setGenerating(false); } }}
-          disabled={generating}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-primary px-5 py-3 text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
-        >
-          <FileDown className="h-4 w-4" />
-          {generating ? "Generating…" : "Download Full Plan PDF"}
-        </button>
-      )}
-
-      {/* ── Journey Map ── */}
+      {/* ── Journey Map (only when not complete) ── */}
+      {!loading && !allDone && (
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Map className="h-4 w-4 text-primary" />
@@ -276,8 +339,9 @@ function Dashboard() {
           })}
         </div>
       </div>
+      )} {/* end journey map conditional */}
 
-      {/* ── Generate report (bottom) ── */}
+      {/* ── Generate report (bottom, only when not complete — complete has it in the card) ── */}
       {!loading && numDone >= 5 && !allDone && (
         <div className="legacy-card p-4 flex items-center justify-between gap-4">
           <div>

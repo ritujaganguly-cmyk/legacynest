@@ -9,8 +9,7 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   );
 }
 
-// Single client — the ONLY GoTrueClient in the app.
-// All auth, storage, and public schema queries go through this.
+// Base client — auth, storage, RPC, and public schema queries
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
@@ -20,13 +19,13 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 // Protected schema client — SPDI data (medical, financial, legal, etc.)
-//
-// Uses supabase.schema('protected') which returns a PostgrestClient
-// that shares the SAME headers object (and therefore the same auth
-// token) as the parent supabase client. No second GoTrueClient is
-// created — eliminating the "Multiple GoTrueClient instances" warning.
-//
-// Requires the 'protected' schema to be listed in:
-//   Supabase Dashboard → Settings → API → Exposed schemas
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const pdb = (supabase as any).schema("protected");
+// Uses db.schema option for broader supabase-js version compatibility.
+// anon role has zero access; authenticated users see only their own rows via RLS
+export const pdb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    storageKey: "legacynest.supabase.auth",
+  },
+  db: { schema: "protected" },
+});

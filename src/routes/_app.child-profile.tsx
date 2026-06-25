@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { dataService, type ChildProfile } from "@/lib/data/mock";
 import { ProfileImagePicker } from "@/components/ProfileImagePicker";
 import { supabase } from "@/integrations/supabase/client";
+import { SPDINotice } from "@/components/compliance/SPDINotice";
 
 export const Route = createFileRoute("/_app/child-profile")({
   head: () => ({ meta: [{ title: "Child Profile — LegacyNest" }] }),

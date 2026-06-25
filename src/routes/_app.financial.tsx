@@ -1,4 +1,5 @@
 import { ChapterBanner } from "@/components/ChapterBanner";
+import { SPDINotice } from "@/components/compliance/SPDINotice";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";

@@ -177,26 +177,31 @@ function AdminEmergencyPage() {
                 {/* Case header */}
                 <div className={`p-5 ${r.is_activated ? "bg-green-900/10" : majorityReached ? "bg-orange-900/10" : "bg-[#1a1a1a]"}`}>
                   {/* CALL FIRST — hero element */}
-                  {r.call_first_name && (
-                    <div className="mb-4 rounded-xl bg-red-900/30 border border-red-500/40 p-4">
-                      <div className="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-1">📞 CALL FIRST</div>
+                  {r.call_first_name ? (
+                    <div className="mb-4 rounded-xl bg-red-900/40 border-2 border-red-500/60 p-4">
+                      <div className="text-[10px] font-bold text-red-300 uppercase tracking-widest mb-2">📞 CALL THIS PERSON FIRST — Emergency Coordinator</div>
                       <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div>
-                          <div className="text-white font-bold text-lg">{r.call_first_name}</div>
-                          <div className="text-red-300/70 text-xs">{r.call_first_relationship || "Emergency Coordinator"}</div>
+                          <div className="text-white font-bold text-xl">{r.call_first_name}</div>
+                          <div className="text-red-300/80 text-sm">{r.call_first_relationship || "Emergency Coordinator"}</div>
                         </div>
                         {r.call_first_phone && (
-                          <a href={`tel:${r.call_first_phone}`} className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-colors">
-                            <Phone className="w-4 h-4" /> {r.call_first_phone}
+                          <a href={`tel:${r.call_first_phone}`} className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white font-black px-5 py-3 rounded-xl text-base transition-colors shadow-lg">
+                            <Phone className="w-5 h-5" /> {r.call_first_phone}
                           </a>
                         )}
                       </div>
                       {r.backup_name && (
-                        <div className="mt-2 text-xs text-white/40 flex items-center gap-2">
-                          Backup: <span className="text-white/60 font-medium">{r.backup_name}</span>
-                          {r.backup_phone && <a href={`tel:${r.backup_phone}`} className="text-red-400">{r.backup_phone}</a>}
+                        <div className="mt-3 pt-3 border-t border-red-500/30 text-xs text-white/50 flex items-center gap-2 flex-wrap">
+                          <span className="text-white/30">If no answer, call backup:</span>
+                          <span className="text-white/70 font-semibold">{r.backup_name}</span>
+                          {r.backup_phone && <a href={`tel:${r.backup_phone}`} className="text-red-400 font-bold">{r.backup_phone}</a>}
                         </div>
                       )}
+                    </div>
+                  ) : (
+                    <div className="mb-4 rounded-xl bg-yellow-900/20 border border-yellow-500/30 p-3 text-xs text-yellow-400">
+                      ⚠ No emergency coordinator set by parent. Review care circle contacts below.
                     </div>
                   )}
                   <div className="flex items-start justify-between gap-4 flex-wrap">

@@ -1639,12 +1639,12 @@ export const dataService = {
     }, false);
   },
 
-  /* PROFILE IMAGES — stored in protected schema */
+  /* PROFILE IMAGES — public schema */
   async getProfileImage(entityType: string, entityId: string): Promise<string | null> {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await pdb
+      const { data } = await supabase
         .from("profile_images")
         .select("image_data")
         .eq("user_id", user.id)
@@ -1656,29 +1656,30 @@ export const dataService = {
   },
 
   async saveProfileImage(entityType: string, entityId: string, dataUrl: string, sizeBytes: number): Promise<boolean> {
-    return safe(async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("not authenticated");
-      const { error } = await pdb
-        .from("profile_images")
-        .upsert({
-          user_id: user.id,
-          entity_type: entityType,
-          entity_id: entityId,
-          image_data: dataUrl,
-          size_bytes: sizeBytes,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "user_id,entity_type,entity_id" });
-      if (error) throw error;
-      return true;
-    }, false);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    const { error } = await supabase
+      .from("profile_images")
+      .upsert({
+        user_id: user.id,
+        entity_type: entityType,
+        entity_id: entityId,
+        image_data: dataUrl,
+        size_bytes: sizeBytes,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id,entity_type,entity_id" });
+    if (error) {
+      console.error("[saveProfileImage]", error.code, error.message);
+      throw new Error(error.message);
+    }
+    return true;
   },
 
   async deleteProfileImage(entityType: string, entityId: string): Promise<boolean> {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-      const { error } = await pdb
+      const { error } = await supabase
         .from("profile_images")
         .delete()
         .eq("user_id", user.id)

@@ -37,14 +37,13 @@ export function ProfileImagePicker({
         toast.error(result.message);
         return;
       }
-      const ok = await dataService.saveProfileImage(entityType, entityId, result.dataUrl, result.sizeBytes);
-      if (!ok) {
-        toast.error("Could not save image. Please try again.");
-        return;
-      }
+      await dataService.saveProfileImage(entityType, entityId, result.dataUrl, result.sizeBytes);
       setLocalImage(result.dataUrl);
       onImageChange?.(result.dataUrl);
       toast.success("Photo saved successfully.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Could not save image.";
+      toast.error(msg);
     } finally {
       setSaving(false);
       if (inputRef.current) inputRef.current.value = "";

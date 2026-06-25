@@ -17,6 +17,9 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CTokenRouteImport } from './routes/c.$token'
+import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
+import { Route as AdminSupportRouteImport } from './routes/admin.support'
+import { Route as AdminFeedbackRouteImport } from './routes/admin.feedback'
 import { Route as AdminEmergencyRouteImport } from './routes/admin.emergency'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AppVaultRouteImport } from './routes/_app.vault'
@@ -75,6 +78,21 @@ const CTokenRoute = CTokenRouteImport.update({
   id: '/c/$token',
   path: '/c/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth/confirm',
+  path: '/auth/confirm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSupportRoute = AdminSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminEmergencyRoute = AdminEmergencyRouteImport.update({
   id: '/emergency',
@@ -198,6 +216,9 @@ export interface FileRoutesByFullPath {
   '/vault': typeof AppVaultRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emergency': typeof AdminEmergencyRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
+  '/admin/support': typeof AdminSupportRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/c/$token': typeof CTokenRoute
 }
 export interface FileRoutesByTo {
@@ -226,6 +247,9 @@ export interface FileRoutesByTo {
   '/vault': typeof AppVaultRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emergency': typeof AdminEmergencyRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
+  '/admin/support': typeof AdminSupportRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/c/$token': typeof CTokenRoute
 }
 export interface FileRoutesById {
@@ -256,6 +280,9 @@ export interface FileRoutesById {
   '/_app/vault': typeof AppVaultRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emergency': typeof AdminEmergencyRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
+  '/admin/support': typeof AdminSupportRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/c/$token': typeof CTokenRoute
 }
 export interface FileRouteTypes {
@@ -286,6 +313,9 @@ export interface FileRouteTypes {
     | '/vault'
     | '/admin/dashboard'
     | '/admin/emergency'
+    | '/admin/feedback'
+    | '/admin/support'
+    | '/auth/confirm'
     | '/c/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -314,6 +344,9 @@ export interface FileRouteTypes {
     | '/vault'
     | '/admin/dashboard'
     | '/admin/emergency'
+    | '/admin/feedback'
+    | '/admin/support'
+    | '/auth/confirm'
     | '/c/$token'
   id:
     | '__root__'
@@ -343,6 +376,9 @@ export interface FileRouteTypes {
     | '/_app/vault'
     | '/admin/dashboard'
     | '/admin/emergency'
+    | '/admin/feedback'
+    | '/admin/support'
+    | '/auth/confirm'
     | '/c/$token'
   fileRoutesById: FileRoutesById
 }
@@ -354,6 +390,7 @@ export interface RootRouteChildren {
   ReviewRoute: typeof ReviewRoute
   SignInRoute: typeof SignInRoute
   SupportRoute: typeof SupportRoute
+  AuthConfirmRoute: typeof AuthConfirmRoute
   CTokenRoute: typeof CTokenRoute
 }
 
@@ -414,6 +451,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/c/$token'
       preLoaderRoute: typeof CTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/support': {
+      id: '/admin/support'
+      path: '/support'
+      fullPath: '/admin/support'
+      preLoaderRoute: typeof AdminSupportRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/feedback': {
+      id: '/admin/feedback'
+      path: '/feedback'
+      fullPath: '/admin/feedback'
+      preLoaderRoute: typeof AdminFeedbackRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/emergency': {
       id: '/admin/emergency'
@@ -596,11 +654,15 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 interface AdminRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminEmergencyRoute: typeof AdminEmergencyRoute
+  AdminFeedbackRoute: typeof AdminFeedbackRoute
+  AdminSupportRoute: typeof AdminSupportRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
   AdminEmergencyRoute: AdminEmergencyRoute,
+  AdminFeedbackRoute: AdminFeedbackRoute,
+  AdminSupportRoute: AdminSupportRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -613,6 +675,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReviewRoute: ReviewRoute,
   SignInRoute: SignInRoute,
   SupportRoute: SupportRoute,
+  AuthConfirmRoute: AuthConfirmRoute,
   CTokenRoute: CTokenRoute,
 }
 export const routeTree = rootRouteImport

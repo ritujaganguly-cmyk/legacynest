@@ -10,7 +10,7 @@ import logo from "@/assets/LegacyNest_Logo.jpeg";
 import { useSession } from "@/lib/session-store";
 import { dataService } from "@/lib/data/mock";
 
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? "admin@legacynest.co.in";
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? "legacynest.co.in@gmail.com";
 
 const NAV_PRIMARY = [
   { to: "/dashboard",          label: "Dashboard",          icon: LayoutGrid },

@@ -28,47 +28,52 @@ const LEGAL: Record<string, { title: string; sections: { heading: string; conten
       { heading: "", content: "Last updated: June 2026\n\nLegacyNest ('we', 'our') is committed to protecting the privacy of families who use our platform. This policy explains how we collect, use, and safeguard your personal information." },
       { heading: "What We Collect", content: "We collect only what is necessary: your name, email address, and the care-planning data you choose to enter (medical, financial, legal, and family information). We do not sell or rent your data to any third party." },
       { heading: "How We Use Your Data", content: "Your data is used solely to provide LegacyNest services — storing your continuity plan, enabling your care circle to collaborate, and sending you reminders you request. We never use your data for advertising." },
-      { heading: "Data Storage & Security", content: "All data is encrypted at rest (AES-256) and in transit (TLS 1.3). We use Supabase (hosted on AWS Mumbai region) to ensure your data stays within India where possible." },
-      { heading: "DPDP Act 2023 Compliance", content: "We comply with India's Digital Personal Data Protection Act 2023. You have the right to access, correct, or request deletion of your personal data at any time by writing to us." },
-      { heading: "Sensitive Data", content: "Information such as UDID numbers, Aadhaar, PAN, disability certificates, and medical records is treated as sensitive personal data and subject to additional protection measures." },
-      { heading: "Your Rights", content: "• Access: Request a copy of all data we hold about you.\n• Correction: Update inaccurate information.\n• Deletion: Request permanent deletion of your account and data.\n• Portability: Export your data in a machine-readable format." },
-      { heading: "Contact for Privacy", content: "Email: legacynest.co.in@gmail.com\nPhone: +91-70440 63379" },
+      { heading: "Data Storage & Security", content: "All data is encrypted at rest (AES-256) and in transit (TLS 1.3). We use Supabase hosted on AWS ap-south-1 (Mumbai) to ensure your data remains within India." },
+      { heading: "DPDP Act 2023 Compliance", content: "We comply with India's Digital Personal Data Protection Act 2023. You have the right to access, correct, or request deletion of your personal data at any time by contacting us." },
+      { heading: "Sensitive Personal Data", content: "Information such as UDID numbers, disability certificates, medical records, and financial details is treated as Sensitive Personal Data under IT (SPDI) Rules 2011 and stored in a restricted protected schema with zero public access." },
+      { heading: "Your Rights", content: "• Access: Request a copy of all data we hold about you.\n• Correction: Update inaccurate information at any time.\n• Deletion: Request permanent deletion of your account and all associated data.\n• Portability: Export your data in a machine-readable format.\n• Withdrawal of Consent: Withdraw data processing consent at any time." },
+      { heading: "Data Retention", content: "Your data is retained as long as your account is active. Upon account deletion, all personal data is permanently removed within 30 days, except where legally required." },
+      { heading: "Grievance Officer", content: "For privacy concerns or to exercise your rights, contact our Grievance Officer at legacynest.co.in@gmail.com. We respond within 48 hours." },
     ],
   },
   security: {
     title: "Security",
     sections: [
       { heading: "", content: "We take the security of your family's most sensitive data seriously. Here is how we protect it." },
-      { heading: "Encryption", content: "• All data encrypted at rest using AES-256.\n• All data in transit protected by TLS 1.3.\n• Vault documents stored in encrypted Supabase Storage buckets." },
-      { heading: "Access Control", content: "• Row-Level Security (RLS) enforced at the database level — you can only access your own data.\n• Authentication via Supabase Auth with industry-standard JWT tokens.\n• Session tokens expire automatically; sign-out clears all local state." },
-      { heading: "Infrastructure", content: "• Hosted on Supabase (backed by AWS), with data residency options in the Asia-Pacific region.\n• No shared database tables — each user's data is logically isolated.\n• Regular automated backups." },
-      { heading: "What We Do Not Do", content: "• We never store passwords in plain text.\n• We never log sensitive fields (Aadhaar, PAN, medical records).\n• We never share credentials or data with third parties without explicit consent." },
-      { heading: "Responsible Disclosure", content: "If you discover a security vulnerability, please email us immediately at legacynest.co.in@gmail.com. We commit to acknowledging reports within 48 hours and resolving critical issues within 7 days." },
+      { heading: "Encryption", content: "• All data encrypted at rest using AES-256.\n• All data in transit protected by TLS 1.3.\n• Vault documents stored in encrypted Supabase Storage buckets.\n• Database backups encrypted separately." },
+      { heading: "Access Control", content: "• Row-Level Security (RLS) enforced at the database level — authenticated users can only access their own rows.\n• Sensitive personal data (medical, financial, legal) stored in a protected schema inaccessible to unauthenticated callers.\n• Authentication via Supabase Auth with industry-standard JWT tokens.\n• Session tokens expire automatically; sign-out clears all local state." },
+      { heading: "Infrastructure", content: "• Hosted on Supabase (backed by AWS ap-south-1, Mumbai) — data stays in India.\n• No shared database tables — each user's data is logically isolated.\n• Regular automated backups with point-in-time recovery." },
+      { heading: "What We Do Not Do", content: "• We never store passwords in plain text.\n• We never log sensitive fields (Aadhaar, PAN, UDID, medical records).\n• We never share data with third parties without explicit written consent.\n• We do not use advertising trackers or third-party analytics." },
+      { heading: "Responsible Disclosure", content: "If you discover a security vulnerability, contact us immediately at legacynest.co.in@gmail.com. We commit to acknowledging reports within 48 hours and resolving critical issues within 7 days." },
     ],
   },
   compliance: {
     title: "Compliance",
     sections: [
-      { heading: "", content: "We are built for India's regulatory environment for disability and special-needs planning." },
-      { heading: "RPWD Act 2016", content: "LegacyNest tracks all 21 disability categories recognised under the RPWD Act 2016. Our platform supports documentation of disability certificates, certifying authorities, and percentage of disability as required for government benefit eligibility." },
-      { heading: "UDID", content: "We help families track UDID numbers, certificate expiry, and renewal timelines as mandated by the Department of Empowerment of Persons with Disabilities (DEPwD)." },
+      { heading: "", content: "LegacyNest is built for India's regulatory environment for disability and special-needs planning." },
+      { heading: "IT (SPDI) Rules 2011", content: "Medical records, financial data, disability documents, UDID numbers, and biometric information are classified as Sensitive Personal Data and stored in a protected database schema with strict access controls, encryption, and no public exposure." },
+      { heading: "DPDP Act 2023", content: "• Data collected only with explicit user consent.\n• Purpose limitation: data used only for care-planning services.\n• Data minimisation: only necessary information is collected.\n• Right to erasure honoured within 30 days of request.\n• Data Fiduciary obligations fully acknowledged.\n• Grievance redressal mechanism in place." },
+      { heading: "RPWD Act 2016", content: "LegacyNest tracks all 21 disability categories recognised under the RPWD Act 2016. The platform supports documentation of disability certificates, certifying authorities, and percentage of disability as required for government benefit eligibility." },
       { heading: "National Trust Act 1999", content: "Our Care Circle and Guardian Designation features align with the legal framework for appointing Local Level Committees (LLCs) and guardians under the National Trust Act for persons with Autism, Cerebral Palsy, Mental Retardation, and Multiple Disabilities." },
+      { heading: "UDID Scheme", content: "We help families track UDID numbers, certificate expiry, and renewal timelines as mandated by the Department of Empowerment of Persons with Disabilities (DEPwD)." },
       { heading: "Niramaya Health Insurance", content: "We remind families about Niramaya scheme renewals (₹1,00,000/year for UDID holders) administered by the National Trust." },
-      { heading: "DPDP Act 2023", content: "• Data collected only with explicit user consent.\n• Purpose limitation: data used only for services described.\n• Data minimisation: we collect only what is needed.\n• Right to erasure honoured within 30 days of request.\n• Data Fiduciary obligations fully acknowledged." },
+      { heading: "Data Residency", content: "All user data is stored on AWS ap-south-1 (Mumbai), ensuring compliance with India's data localisation expectations under the DPDP Act 2023." },
     ],
   },
   terms: {
     title: "Terms of Use",
     sections: [
-      { heading: "", content: "Effective: June 2026\n\nBy using LegacyNest you agree to these terms." },
+      { heading: "", content: "Effective: June 2026\n\nBy using LegacyNest you agree to these terms. Please read them carefully." },
       { heading: "1. Who May Use LegacyNest", content: "LegacyNest is intended for parents, guardians, and authorised care-circle members of individuals with special needs. You must be 18 years or older to create an account." },
-      { heading: "2. Your Account", content: "You are responsible for maintaining the confidentiality of your login credentials. Notify us immediately at legacynest.co.in@gmail.com if you suspect unauthorised access." },
-      { heading: "3. Your Data is Yours", content: "You retain full ownership of all data you enter into LegacyNest. We act as a data processor on your behalf. You may export or delete your data at any time." },
-      { heading: "4. Acceptable Use", content: "You agree not to:\n• Use LegacyNest for any unlawful purpose.\n• Upload false, misleading, or fraudulent documents.\n• Attempt to access another user's data.\n• Reverse-engineer or copy the platform." },
-      { heading: "5. Service Availability", content: "We aim for 99.5% uptime but do not guarantee uninterrupted service. Planned maintenance will be communicated in advance." },
-      { heading: "6. Limitation of Liability", content: "LegacyNest provides a planning and documentation tool. It does not constitute legal, financial, or medical advice. Always consult qualified professionals for legal and financial decisions." },
-      { heading: "7. Governing Law", content: "These terms are governed by the laws of India. Disputes shall be subject to the jurisdiction of courts in West Bengal, India." },
-      { heading: "Contact", content: "Email: legacynest.co.in@gmail.com\nPhone: +91-70440 63379" },
+      { heading: "2. Your Account", content: "You are responsible for maintaining the confidentiality of your login credentials. Contact us immediately at legacynest.co.in@gmail.com if you suspect unauthorised access to your account." },
+      { heading: "3. Your Data is Yours", content: "You retain full ownership of all data you enter into LegacyNest. We act as a data processor on your behalf under DPDP Act 2023. You may export or delete your data at any time from the Settings page." },
+      { heading: "4. Acceptable Use", content: "You agree not to:\n• Use LegacyNest for any unlawful purpose.\n• Upload false, misleading, or fraudulent documents.\n• Attempt to access another user's data.\n• Reverse-engineer, copy, or redistribute the platform.\n• Use the platform to harass or harm others." },
+      { heading: "5. No Professional Advice", content: "LegacyNest provides a planning and documentation tool. It does not constitute legal, financial, medical, or psychological advice. Always consult qualified professionals for legal, financial, and medical decisions." },
+      { heading: "6. Service Availability", content: "We aim for 99.5% uptime but do not guarantee uninterrupted service. Planned maintenance will be communicated in advance via email." },
+      { heading: "7. Limitation of Liability", content: "LegacyNest's liability is limited to the maximum extent permitted by Indian law. We are not liable for decisions made based on information stored in the platform." },
+      { heading: "8. Termination", content: "We reserve the right to suspend or terminate accounts that violate these terms. You may delete your account at any time from Settings." },
+      { heading: "9. Governing Law", content: "These terms are governed by the laws of India. Disputes shall be subject to the jurisdiction of courts in West Bengal, India." },
+      { heading: "Contact", content: "For queries about these terms, write to: legacynest.co.in@gmail.com" },
     ],
   },
 };
@@ -218,7 +223,7 @@ function Landing() {
 
           <div className="mt-8 grid md:grid-cols-3 gap-5">
             <div className="md:row-span-2 rounded-2xl bg-surface-low p-6 border border-border">
-              <div className="text-4xl font-bold text-primary">80%+</div>
+              <div className="text-4xl font-bold text-primary">85%+</div>
               <p className="mt-2 text-sm text-muted-foreground">
                 Of all caregiving for persons with disabilities in India falls on immediate family — with no backup plan, no documentation, and no successor named.
               </p>

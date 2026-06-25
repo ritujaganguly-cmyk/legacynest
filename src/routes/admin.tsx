@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, Link, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? "admin@legacynest.co.in";
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? "legacynest.co.in@gmail.com";
 
 export const Route = createFileRoute("/admin")({
   beforeLoad: async () => {
@@ -19,6 +19,8 @@ function AdminShell() {
   const tabs = [
     { to: "/admin/dashboard", label: "Dashboard" },
     { to: "/admin/emergency", label: "🚨 Emergency" },
+    { to: "/admin/support", label: "📩 Support" },
+    { to: "/admin/feedback", label: "💬 Feedback" },
   ] as const;
 
   return (

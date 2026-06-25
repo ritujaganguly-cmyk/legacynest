@@ -379,9 +379,13 @@ function EmergencyPage() {
             {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Download Card
           </button>
-          <button onClick={() => setSimPathPicker(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-amber-600 text-white font-semibold px-4 py-2.5 text-sm hover:bg-amber-700">
-            <ClipboardCheck className="h-4 w-4" /> Run Simulation
+          <button
+            onClick={() => setSimPathPicker(true)}
+            disabled={!plan?.coordinatorName}
+            title={!plan?.coordinatorName ? "Set Emergency Coordinator first to run simulation" : undefined}
+            className="inline-flex items-center gap-2 rounded-lg bg-amber-600 text-white font-semibold px-4 py-2.5 text-sm hover:bg-amber-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            ⚡ Run Simulation
           </button>
         </div>
       </div>
@@ -401,8 +405,11 @@ function EmergencyPage() {
             </div>
           </div>
         </div>
-        <button onClick={toggleActivation}
-          className={`shrink-0 rounded-lg px-5 py-2.5 text-sm font-bold transition-colors ${
+        <button
+          onClick={toggleActivation}
+          disabled={!isActive && !plan?.coordinatorName}
+          title={!plan?.coordinatorName && !isActive ? "Set Emergency Coordinator before activating" : undefined}
+          className={`shrink-0 rounded-lg px-5 py-2.5 text-sm font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
             isActive
               ? "border-2 border-red-300 text-red-700 hover:bg-red-100"
               : "bg-red-600 text-white hover:bg-red-700 shadow-md"

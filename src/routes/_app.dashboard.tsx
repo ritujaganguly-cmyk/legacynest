@@ -333,6 +333,14 @@ function Dashboard() {
       </div>
       )} {/* end journey map conditional */}
 
+      {/* ── Action Items — visible once 66%+ chapters complete (7 of 10) ── */}
+      {!loading && numDone >= 7 && Object.keys(actionInput).length > 0 && (
+        <ActionableItems
+          input={actionInput}
+          storageKey={`legacynest.actionitems.${userId}.v1`}
+        />
+      )}
+
       {/* ── Partial plan download (only when not complete) ── */}
       {!loading && numDone >= 5 && !allDone && (
         <div className="legacy-card p-4 flex items-center justify-between gap-4">
@@ -353,13 +361,6 @@ function Dashboard() {
         </div>
       )}
 
-      {/* ── Action Items — always visible, after partial plan ── */}
-      {!loading && Object.keys(actionInput).length > 0 && (
-        <ActionableItems
-          input={actionInput}
-          storageKey={`legacynest.actionitems.${userId}.v1`}
-        />
-      )}
 
     </div>
   );

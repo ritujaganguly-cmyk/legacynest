@@ -1639,12 +1639,12 @@ export const dataService = {
     }, false);
   },
 
-  /* PROFILE IMAGES */
+  /* PROFILE IMAGES — stored in protected schema */
   async getProfileImage(entityType: string, entityId: string): Promise<string | null> {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await supabase
+      const { data } = await pdb
         .from("profile_images")
         .select("image_data")
         .eq("user_id", user.id)
@@ -1659,7 +1659,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { error } = await supabase
+      const { error } = await pdb
         .from("profile_images")
         .upsert({
           user_id: user.id,
@@ -1678,7 +1678,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-      const { error } = await supabase
+      const { error } = await pdb
         .from("profile_images")
         .delete()
         .eq("user_id", user.id)

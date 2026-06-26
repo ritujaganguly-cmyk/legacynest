@@ -766,7 +766,7 @@ function ActivationCoordinators() {
     if (!user) return;
     const [c, co] = await Promise.all([
       pdb.from("emergency_coordinators").select("*").eq("user_id", user.id).eq("is_active", true).order("created_at"),
-      pdb.from("emergency_consent").select("*").eq("user_id", user.id).single(),
+      pdb.from("emergency_consent").select("*").eq("user_id", user.id).maybeSingle(),
     ]);
     setCoords((c.data ?? []) as Coordinator[]);
     const con = co.data as Consent | null;

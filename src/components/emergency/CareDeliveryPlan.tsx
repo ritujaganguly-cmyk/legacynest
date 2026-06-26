@@ -84,21 +84,23 @@ export function CareDeliveryPlan() {
 
       // Names + break-glass instructions
       const [pp, cp, ep] = await Promise.all([
-        pdb.from("parent_profile").select("full_name").eq("user_id", user.id).single(),
-        pdb.from("child_profile").select("name").eq("user_id", user.id).single(),
-        pdb.from("emergency_plan").select("break_glass_instructions,coordinator_name,coordinator_phone").eq("user_id", user.id).single(),
+        pdb.from("parent_profile").select("full_name").eq("user_id", user.id).maybeSingle(),
+        pdb.from("child_profile").select("name").eq("user_id", user.id).maybeSingle(),
+        pdb.from("emergency_plan").select("break_glass_instructions,coordinator_name,coordinator_phone").eq("user_id", user.id).maybeSingle(),
       ]);
       setParentName((pp.data as {full_name:string}|null)?.full_name ?? "");
       setChildName((cp.data as {name:string}|null)?.name ?? "your child");
       setBreakGlass((ep.data as {break_glass_instructions:string}|null)?.break_glass_instructions ?? "");
 
       // Shares (table may not exist yet)
-      const { data: sh } = await supabase.from("caregiver_shares").select("*").eq("user_id", user.id).catch(() => ({ data: [] }));
-      if (sh) {
-        const map: Record<string, Share> = {};
-        (sh as Share[]).forEach(s => { map[s.caregiver_email] = s; });
-        setShares(map);
-      }
+      try {
+        const { data: sh } = await supabase.from("caregiver_shares").select("*").eq("user_id", user.id);
+        if (sh) {
+          const map: Record<string, Share> = {};
+          (sh as Share[]).forEach(s => { map[s.caregiver_email] = s; });
+          setShares(map);
+        }
+      } catch { /* ignore if table not yet available */ }
     } catch (e) {
       console.error("CareDeliveryPlan:", e);
     } finally {
@@ -125,10 +127,11 @@ export function CareDeliveryPlan() {
     const { error } = await supabase.from("caregiver_shares").upsert(payload, { onConflict: "user_id,caregiver_email" });
     // Try to save category_comments separately (column may not exist)
     if (!error && (catCommentsPatch !== undefined || patch.category_comments !== undefined)) {
-      await supabase.from("caregiver_shares")
-        .update({ category_comments: catCommentsPatch ?? patch.category_comments })
-        .eq("user_id", user.id).eq("caregiver_email", email)
-        .catch(() => { /* ignore if column doesn't exist */ });
+      try {
+        await supabase.from("caregiver_shares")
+          .update({ category_comments: catCommentsPatch ?? patch.category_comments })
+          .eq("user_id", user.id).eq("caregiver_email", email);
+      } catch { /* ignore if column doesn't exist */ }
     }
     if (!error) await load();
     else toast.error(`Save failed: ${error.message}`);

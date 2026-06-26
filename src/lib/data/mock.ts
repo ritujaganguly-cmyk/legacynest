@@ -686,7 +686,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-      const payload = { ...fromMember(m), user_id: user.id };      const { data, error } = await supabase.from("care_circle").insert(payload).select().single();
+      const payload = { ...fromMember(m), user_id: user.id };      const { data, error } = await supabase.from("care_circle").insert(payload).select().maybeSingle();
       if (error) {
         console.error("Supabase error:", error);
         throw error;
@@ -703,7 +703,7 @@ export const dataService = {
         .eq("id", m.id)
         .eq("user_id", user.id)
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return toMember(data as CareRow);
     }, null as CareCircleMember | null);
@@ -882,7 +882,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await pdb.from("emergency_plan").select("*").eq("user_id", user.id).single();
+      const { data } = await pdb.from("emergency_plan").select("*").eq("user_id", user.id).maybeSingle();
       if (!data) return null;
       const r = data as Record<string, unknown>;
       return {
@@ -941,7 +941,7 @@ export const dataService = {
       const { data, error } = await pdb.from("emergency_institutions").insert({
         user_id: user.id, org_name: inst.orgName, contact: inst.contact ?? null,
         what_to_tell: inst.whatToTell ?? null, is_notified: inst.isNotified,
-      }).select().single();
+      }).select().maybeSingle();
       if (error) throw error;
       const r = data as Record<string, unknown>;
       return { id: r.id as string, orgName: r.org_name as string, contact: r.contact as string | undefined,
@@ -1104,7 +1104,7 @@ export const dataService = {
         pros: opt.pros ?? null, cons: opt.cons ?? null,
         has_consent: opt.hasConsent, has_keys_access: opt.hasKeysAccess,
         notes: opt.notes ?? null, updated_at: new Date().toISOString(),
-      }).select().single();
+      }).select().maybeSingle();
       if (error) throw error;
       const r = data as Record<string, unknown>;
       return { id: r.id as string, userId: r.user_id as string, name: r.name as string,
@@ -1178,7 +1178,7 @@ export const dataService = {
       const { data, error } = await pdb.from("residential_checklist").insert({
         user_id: user.id, item: item.item, category: item.category,
         option_id: item.optionId ?? null, is_done: item.isDone, notes: item.notes ?? null,
-      }).select().single();
+      }).select().maybeSingle();
       if (error) throw error;
       const r = data as Record<string, unknown>;
       return { id: r.id as string, userId: r.user_id as string, item: r.item as string,
@@ -1205,7 +1205,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await pdb.from("residential_letter_of_intent").select("*").eq("user_id", user.id).single();
+      const { data } = await pdb.from("residential_letter_of_intent").select("*").eq("user_id", user.id).maybeSingle();
       if (!data) return null;
       const r = data as Record<string, unknown>;
       return {
@@ -1319,7 +1319,7 @@ export const dataService = {
       if (!user) throw new Error("not authenticated");
       const { data, error } = await pdb.from("medications")
         .insert({ user_id: user.id, name: m.name, dose: m.dose, frequency: m.frequency, till_date: m.tillDate, notes: m.notes })
-        .select().single();
+        .select().maybeSingle();
       if (error) throw error;
       const r = data as { id: string; name: string; dose: string | null; frequency: string | null; till_date: string | null; notes: string | null };
       return { id: r.id, name: r.name, dose: r.dose ?? "", frequency: r.frequency ?? "", tillDate: r.till_date ?? "", notes: r.notes ?? "" };
@@ -1331,7 +1331,7 @@ export const dataService = {
       if (!user) throw new Error("not authenticated");
       const { data, error } = await pdb.from("medications")
         .update({ name: m.name, dose: m.dose, frequency: m.frequency, till_date: m.tillDate, notes: m.notes })
-        .eq("id", m.id).eq("user_id", user.id).select().single();
+        .eq("id", m.id).eq("user_id", user.id).select().maybeSingle();
       if (error) throw error;
       const r = data as { id: string; name: string; dose: string | null; frequency: string | null; till_date: string | null; notes: string | null };
       return { id: r.id, name: r.name, dose: r.dose ?? "", frequency: r.frequency ?? "", tillDate: r.till_date ?? "", notes: r.notes ?? "" };
@@ -1364,7 +1364,7 @@ export const dataService = {
       if (!user) throw new Error("not authenticated");
       const { data, error } = await pdb.from("health_contacts")
         .insert({ user_id: user.id, name: c.name, role: c.role, facility: c.facility, phone: c.phone, is_primary: c.isPrimary, initials: c.initials })
-        .select().single();
+        .select().maybeSingle();
       if (error) throw error;
       const r = data as { id: string; name: string; role: string | null; facility: string | null; phone: string | null; is_primary: boolean | null; initials: string | null };
       return { id: r.id, name: r.name, role: r.role ?? "", facility: r.facility ?? "", phone: r.phone ?? "", isPrimary: !!r.is_primary, initials: r.initials ?? c.initials };
@@ -1374,7 +1374,7 @@ export const dataService = {
     return safe(async () => {
       const { data, error } = await pdb.from("health_contacts")
         .update({ name: c.name, role: c.role, facility: c.facility, phone: c.phone, is_primary: c.isPrimary, initials: c.initials })
-        .eq("id", c.id).select().single();
+        .eq("id", c.id).select().maybeSingle();
       if (error) throw error;
       const r = data as { id: string; name: string; role: string | null; facility: string | null; phone: string | null; is_primary: boolean | null; initials: string | null };
       return { id: r.id, name: r.name, role: r.role ?? "", facility: r.facility ?? "", phone: r.phone ?? "", isPrimary: !!r.is_primary, initials: r.initials ?? c.initials };
@@ -1408,7 +1408,7 @@ export const dataService = {
       if (!user) throw new Error("not authenticated");
       const { data, error } = await pdb.from("therapies")
         .insert({ user_id: user.id, name: t.name, specialty: t.specialty, therapist_name: t.therapistName, therapist_role: t.therapistRole, next_session: t.nextSession, status: t.status ?? null })
-        .select().single();
+        .select().maybeSingle();
       if (error) throw error;
       const r = data as { id: string; name: string; specialty: string | null; therapist_name: string | null; therapist_role: string | null; next_session: string | null };
       return { id: r.id, name: r.name, specialty: r.specialty ?? "", therapistName: r.therapist_name ?? "", therapistRole: r.therapist_role ?? "", nextSession: r.next_session ?? "" };
@@ -1418,7 +1418,7 @@ export const dataService = {
     return safe(async () => {
       const { data, error } = await pdb.from("therapies")
         .update({ name: t.name, specialty: t.specialty, therapist_name: t.therapistName, therapist_role: t.therapistRole, next_session: t.nextSession, status: t.status ?? null })
-        .eq("id", t.id).select().single();
+        .eq("id", t.id).select().maybeSingle();
       if (error) throw error;
       const r = data as { id: string; name: string; specialty: string | null; therapist_name: string | null; therapist_role: string | null; next_session: string | null };
       return { id: r.id, name: r.name, specialty: r.specialty ?? "", therapistName: r.therapist_name ?? "", therapistRole: r.therapist_role ?? "", nextSession: r.next_session ?? "" };
@@ -1448,7 +1448,7 @@ export const dataService = {
       if (!user) throw new Error("not authenticated");
       const { data, error } = await pdb.from("medical_records")
         .insert({ user_id: user.id, title: rec.title, category: rec.category, doctor: rec.doctor, record_date: rec.recordDate, next_appointment: rec.nextAppointment, status: rec.status })
-        .select().single();
+        .select().maybeSingle();
       if (error) throw error;
       const r = data as { id: string; title: string; category: string | null; doctor: string | null; record_date: string | null; next_appointment: string | null; status: string | null };
       return { id: r.id, title: r.title, category: r.category ?? "", doctor: r.doctor ?? "", recordDate: r.record_date ?? "", nextAppointment: r.next_appointment ?? "", status: r.status as "done" | "not_done" | undefined };
@@ -1462,7 +1462,7 @@ export const dataService = {
         .update({ title: rec.title, category: rec.category, doctor: rec.doctor, record_date: rec.recordDate, next_appointment: rec.nextAppointment, status: rec.status })
         .eq("id", rec.id)
         .eq("user_id", user.id)
-        .select().single();
+        .select().maybeSingle();
       if (error) throw error;
       const r = data as { id: string; title: string; category: string | null; doctor: string | null; record_date: string | null; next_appointment: string | null; status: string | null };
       return { id: r.id, title: r.title, category: r.category ?? "", doctor: r.doctor ?? "", recordDate: r.record_date ?? "", nextAppointment: r.next_appointment ?? "", status: r.status as "done" | "not_done" | undefined };
@@ -1481,7 +1481,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await pdb.from("legal_will").select("will_status").eq("user_id", user.id).single();
+      const { data } = await pdb.from("legal_will").select("will_status").eq("user_id", user.id).maybeSingle();
       if (!data) return null;
       return { primaryExecutor: "", alternateExecutor: "", willStatus: (data as Record<string,string>).will_status ?? "",
         trustStatus: "", guardianName: "", courtOrderRef: "", beneficiaryName: "", trustType: "" };
@@ -1494,7 +1494,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await pdb.from("legal_will").select("*").eq("user_id", user.id).single();
+      const { data } = await pdb.from("legal_will").select("*").eq("user_id", user.id).maybeSingle();
       if (!data) return null;
       const r = data as Record<string, unknown>;
       return {
@@ -1536,7 +1536,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await pdb.from("legal_trust").select("*").eq("user_id", user.id).single();
+      const { data } = await pdb.from("legal_trust").select("*").eq("user_id", user.id).maybeSingle();
       if (!data) return null;
       const r = data as Record<string, unknown>;
       return {
@@ -1576,7 +1576,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await pdb.from("legal_guardianship").select("*").eq("user_id", user.id).single();
+      const { data } = await pdb.from("legal_guardianship").select("*").eq("user_id", user.id).maybeSingle();
       if (!data) return null;
       const r = data as Record<string, unknown>;
       return {
@@ -1613,7 +1613,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await pdb.from("legal_poa").select("*").eq("user_id", user.id).single();
+      const { data } = await pdb.from("legal_poa").select("*").eq("user_id", user.id).maybeSingle();
       if (!data) return null;
       const r = data as Record<string, unknown>;
       return {
@@ -1733,7 +1733,7 @@ export const dataService = {
           storage_bucket_path: doc.storageBucketPath,
           updated_at: new Date().toISOString(),
         })
-        .select().single();
+        .select().maybeSingle();
       if (error) throw error;
       return toVault({ ...(data as VaultRow), document_name: (data as VaultRow).document_name ?? doc.name });
     }, null);
@@ -1774,7 +1774,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data, error } = await pdb.from("parent_profile").select("*").eq("user_id", user.id).single();
+      const { data, error } = await pdb.from("parent_profile").select("*").eq("user_id", user.id).maybeSingle();
       if (error && error.code === "PGRST116") return null;
       if (error) throw error;
       return {
@@ -1809,7 +1809,7 @@ export const dataService = {
       const { data, error } = await pdb.from("parent_profile")
         .upsert(payload, { onConflict: "user_id" })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return {
@@ -1842,7 +1842,7 @@ export const dataService = {
       if (!user) throw new Error("not authenticated");
       const { data, error } = await pdb.from("disability_documents")
         .insert({ user_id: user.id, ...doc })
-        .select().single();
+        .select().maybeSingle();
       if (error) throw error;
       return data as DisabilityDocument;
     }, null);
@@ -1852,7 +1852,7 @@ export const dataService = {
       const { data, error } = await pdb.from("disability_documents")
         .update(doc)
         .eq("id", id)
-        .select().single();
+        .select().maybeSingle();
       if (error) throw error;
       return data as DisabilityDocument;
     }, null);
@@ -1909,7 +1909,7 @@ export const dataService = {
           annual_return_percentage: asset.annualReturnPercentage ?? null,
           notes: asset.notes ?? null,
         })
-        .select().single();
+        .select().maybeSingle();
       if (error) {
         console.error("[addFinancialAsset]", error.message);
         throw new Error(error.message);
@@ -1938,7 +1938,7 @@ export const dataService = {
       if (asset.annualReturnPercentage !== undefined) patch.annual_return_percentage = asset.annualReturnPercentage;
       if (asset.notes !== undefined)                  patch.notes = asset.notes;
       const { data, error } = await pdb.from("financial_assets")
-        .update(patch).eq("id", id).select().single();
+        .update(patch).eq("id", id).select().maybeSingle();
       if (error) throw error;
       const r = data as Record<string, unknown>;
       return {
@@ -1979,7 +1979,7 @@ export const dataService = {
       .insert({ user_id: user.id, name: row.name, category: row.category,
         monthly_amount: row.monthlyAmount, inflation_rate: row.inflationRate,
         phase3_only: row.phase3Only, waived_after_parents: row.waivedAfterParents ?? false })
-      .select().single();
+      .select().maybeSingle();
     if (error) {
       console.error("[addFinancialExpense]", error.message);
       throw new Error(error.message);
@@ -2035,7 +2035,7 @@ export const dataService = {
         .insert({ user_id: user.id, name: row.name, income_type: row.incomeType,
           monthly_amount: row.monthlyAmount, increment_rate: row.incrementRate,
           survives_parents: row.survivesParents, ends_at_retirement: row.endsAtRetirement })
-        .select().single();
+        .select().maybeSingle();
       if (error) throw error;
       const r = data as Record<string, unknown>;
       return { id: r.id as string, userId: r.user_id as string, name: r.name as string,
@@ -2071,7 +2071,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await pdb.from("financial_assumptions").select("*").eq("user_id", user.id).single();
+      const { data } = await pdb.from("financial_assumptions").select("*").eq("user_id", user.id).maybeSingle();
       if (!data) return null;
       const r = data as Record<string, unknown>;
       return {
@@ -2149,7 +2149,7 @@ export const dataService = {
           renewal_reminder_date: policy.renewalReminderDate ?? null,
           notes: policy.notes ?? null,
         })
-        .select().single();
+        .select().maybeSingle();
       if (error) throw error;
       const r = data as Record<string, unknown>;
       return {
@@ -2181,7 +2181,7 @@ export const dataService = {
       if (policy.renewalReminderDate !== undefined) patch.renewal_reminder_date = policy.renewalReminderDate;
       if (policy.notes !== undefined)               patch.notes = policy.notes;
       const { data, error } = await pdb.from("insurance_policies")
-        .update(patch).eq("id", id).select().single();
+        .update(patch).eq("id", id).select().maybeSingle();
       if (error) throw error;
       const r = data as Record<string, unknown>;
       return {
@@ -2250,7 +2250,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("not authenticated");
-      const { data, error } = await pdb.from("child_profile").select("*").eq("user_id", user.id).single();
+      const { data, error } = await pdb.from("child_profile").select("*").eq("user_id", user.id).maybeSingle();
       if (error && error.code === "PGRST116") return null; // No rows found
       if (error) throw error;
       return {
@@ -2307,7 +2307,7 @@ export const dataService = {
     const { data, error } = await pdb.from("child_profile")
       .upsert(payload, { onConflict: "user_id" })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("[saveChildProfile]", error.message);
@@ -2366,7 +2366,7 @@ export const dataService = {
         description: plan.description,
         status: plan.status,
         priority: plan.priority,
-      }).select().single();
+      }).select().maybeSingle();
       if (error) throw error;
       return {
         id: data.id,
@@ -2411,7 +2411,7 @@ export const dataService = {
         email: guardian.email,
         order_index: guardian.orderIndex,
         responsibilities: guardian.responsibilities ?? [],
-      }).select().single();
+      }).select().maybeSingle();
       if (error) throw error;
       return {
         id: data.id,
@@ -2454,7 +2454,7 @@ export const dataService = {
         allocation_percentage: asset.allocationPercentage,
         assigned_guardian: asset.assignedGuardianId,
         notes: asset.notes,
-      }).select().single();
+      }).select().maybeSingle();
       if (error) throw error;
       return {
         id: data.id,
@@ -2489,7 +2489,7 @@ export const dataService = {
         category: instruction.category,
         instruction: instruction.instruction,
         priority: instruction.priority,
-      }).select().single();
+      }).select().maybeSingle();
       if (error) throw error;
       return {
         id: data.id,
@@ -2508,7 +2508,7 @@ export const dataService = {
         description: plan.description,
         status: plan.status,
         priority: plan.priority,
-      }).eq("id", id).select().single();
+      }).eq("id", id).select().maybeSingle();
       if (error) throw error;
       return {
         id: data.id,
@@ -2532,7 +2532,7 @@ export const dataService = {
         phone: guardian.phone,
         email: guardian.email,
         responsibilities: guardian.responsibilities ?? [],
-      }).eq("id", id).select().single();
+      }).eq("id", id).select().maybeSingle();
       if (error) throw error;
       return {
         id: data.id,

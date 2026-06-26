@@ -73,7 +73,7 @@ function EmergencyConfirmPage() {
 
     if (confirmations >= majority) {
       // Only stamp if not already stamped
-      await supabase
+      await pdb
         .from("emergency_consent")
         .update({ majority_reached_at: new Date().toISOString() })
         .eq("user_id", result.user_id)

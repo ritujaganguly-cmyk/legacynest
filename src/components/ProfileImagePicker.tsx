@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Camera, Loader2 } from "lucide-react";
 import { processProfileImage } from "@/lib/image-utils";
 import { dataService } from "@/lib/data/mock";
@@ -26,6 +26,10 @@ export function ProfileImagePicker({
   const inputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [localImage, setLocalImage] = useState<string | null>(currentImage ?? null);
+
+  useEffect(() => {
+    setLocalImage(currentImage ?? null);
+  }, [currentImage]);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];

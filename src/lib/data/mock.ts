@@ -721,7 +721,7 @@ export const dataService = {
   /* VAULT */
   async listVaultDocuments(): Promise<VaultDocument[]> {
     return safe(async () => {
-      const { data, error } = await supabase
+      const { data, error } = await pdb
         .from("digital_vault_documents")
         .select("*")
         .order("updated_at", { ascending: false });
@@ -740,7 +740,7 @@ export const dataService = {
   },
   async setVaultCriticalForEmergency(id: string, value: boolean) {
     return safe(async () => {
-      const { error } = await supabase
+      const { error } = await pdb
         .from("digital_vault_documents")
         .update({ is_critical_for_emergency: value })
         .eq("id", id);
@@ -2212,7 +2212,7 @@ export const dataService = {
         .upload(storagePath, file, { upsert: true });
       if (uploadError) throw uploadError;
       // Save the storage path back to the document record
-      const { error: updateError } = await supabase
+      const { error: updateError } = await pdb
         .from("digital_vault_documents")
         .update({ storage_bucket_path: storagePath, updated_at: new Date().toISOString() })
         .eq("id", documentId);

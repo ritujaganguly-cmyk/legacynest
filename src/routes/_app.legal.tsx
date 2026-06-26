@@ -141,13 +141,14 @@ function LegalPage() {
           <input
             type="checkbox"
             checked={!!willDraft.willStatus && willDraft.willStatus !== "Not Started"}
-            onChange={(e) => {
+            onChange={async (e) => {
+              const newStatus = e.target.checked ? "In Progress" : "Not Started";
+              setWillDraft(d => ({ ...d, willStatus: newStatus }));
+              await dataService.saveLegalWill({ ...willDraft, willStatus: newStatus });
               if (e.target.checked) {
-                setWillDraft(d => ({ ...d, willStatus: "In Progress" }));
                 void dataService.markSectionComplete("legal");
+                qc.invalidateQueries({ queryKey: ["legal-will"] });
                 toast.success("Added to your Action Plan. A lawyer consultation is your first step.");
-              } else {
-                setWillDraft(d => ({ ...d, willStatus: "Not Started" }));
               }
             }}
             className="h-4 w-4 rounded accent-primary"

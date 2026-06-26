@@ -2,7 +2,7 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import {
   LayoutGrid, Landmark, MapPin, Scale, Users, HeartPulse, AlertTriangle,
   Settings, HelpCircle, Bell, Shield, BookOpen, ClipboardList,
-  Menu, X, LogOut, User, Lock, Pill, CalendarClock, ShieldAlert,
+  Menu, X, LogOut, User, Lock, Pill, CalendarClock, ShieldAlert, MessageSquare,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -10,7 +10,11 @@ import logo from "@/assets/LegacyNest_Logo.jpeg";
 import { useSession } from "@/lib/session-store";
 import { dataService } from "@/lib/data/mock";
 
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? "legacynest.co.in@gmail.com";
+const ADMIN_EMAILS: string[] = [
+  "ganguly80@gmail.com",
+  "legacynest.co.in@gmail.com",
+  ...(import.meta.env.VITE_ADMIN_EMAIL ? [import.meta.env.VITE_ADMIN_EMAIL as string] : []),
+];
 
 const NAV_PRIMARY = [
   { to: "/dashboard",          label: "Dashboard",          icon: LayoutGrid },
@@ -25,6 +29,7 @@ const NAV_PRIMARY = [
   { to: "/legal",              label: "Legal",              icon: Scale },
   { to: "/vault",              label: "Digital Vault",      icon: Lock },
   { to: "/emergency",          label: "Emergency",          icon: AlertTriangle },
+  { to: "/feedback" as "/feedback", label: "Feedback",       icon: MessageSquare },
   { to: "/support" as "/support", label: "Support",         icon: BookOpen },
 ] as const;
 
@@ -238,7 +243,7 @@ export function AppShell() {
         </nav>
 
         <div className="px-3 pb-6 pt-4 border-t border-sidebar-border space-y-0.5">
-          {user?.email === ADMIN_EMAIL && (
+          {user?.email && ADMIN_EMAILS.includes(user.email) && (
             <a href="/admin/dashboard" className="sidebar-link flex items-center gap-2 text-primary font-medium">
               <Shield className="h-4 w-4 shrink-0" /> <span className="text-sm">Admin</span>
             </a>

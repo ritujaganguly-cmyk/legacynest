@@ -31,6 +31,7 @@ import { Route as AppMedicalRouteImport } from './routes/_app.medical'
 import { Route as AppLegalRouteImport } from './routes/_app.legal'
 import { Route as AppInsurancePoliciesRouteImport } from './routes/_app.insurance-policies'
 import { Route as AppFinancialRouteImport } from './routes/_app.financial'
+import { Route as AppFeedbackRouteImport } from './routes/_app.feedback'
 import { Route as AppEmergencyRouteImport } from './routes/_app.emergency'
 import { Route as AppDisabilityDocumentsRouteImport } from './routes/_app.disability-documents'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
@@ -149,6 +150,11 @@ const AppFinancialRoute = AppFinancialRouteImport.update({
   path: '/financial',
   getParentRoute: () => AppRoute,
 } as any)
+const AppFeedbackRoute = AppFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppEmergencyRoute = AppEmergencyRouteImport.update({
   id: '/emergency',
   path: '/emergency',
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/disability-documents': typeof AppDisabilityDocumentsRoute
   '/emergency': typeof AppEmergencyRoute
+  '/feedback': typeof AppFeedbackRoute
   '/financial': typeof AppFinancialRoute
   '/insurance-policies': typeof AppInsurancePoliciesRoute
   '/legal': typeof AppLegalRoute
@@ -236,6 +243,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/disability-documents': typeof AppDisabilityDocumentsRoute
   '/emergency': typeof AppEmergencyRoute
+  '/feedback': typeof AppFeedbackRoute
   '/financial': typeof AppFinancialRoute
   '/insurance-policies': typeof AppInsurancePoliciesRoute
   '/legal': typeof AppLegalRoute
@@ -269,6 +277,7 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/disability-documents': typeof AppDisabilityDocumentsRoute
   '/_app/emergency': typeof AppEmergencyRoute
+  '/_app/feedback': typeof AppFeedbackRoute
   '/_app/financial': typeof AppFinancialRoute
   '/_app/insurance-policies': typeof AppInsurancePoliciesRoute
   '/_app/legal': typeof AppLegalRoute
@@ -302,6 +311,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/disability-documents'
     | '/emergency'
+    | '/feedback'
     | '/financial'
     | '/insurance-policies'
     | '/legal'
@@ -333,6 +343,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/disability-documents'
     | '/emergency'
+    | '/feedback'
     | '/financial'
     | '/insurance-policies'
     | '/legal'
@@ -365,6 +376,7 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/disability-documents'
     | '/_app/emergency'
+    | '/_app/feedback'
     | '/_app/financial'
     | '/_app/insurance-policies'
     | '/_app/legal'
@@ -550,6 +562,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFinancialRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/feedback': {
+      id: '/_app/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof AppFeedbackRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/emergency': {
       id: '/_app/emergency'
       path: '/emergency'
@@ -618,6 +637,7 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppDisabilityDocumentsRoute: typeof AppDisabilityDocumentsRoute
   AppEmergencyRoute: typeof AppEmergencyRoute
+  AppFeedbackRoute: typeof AppFeedbackRoute
   AppFinancialRoute: typeof AppFinancialRoute
   AppInsurancePoliciesRoute: typeof AppInsurancePoliciesRoute
   AppLegalRoute: typeof AppLegalRoute
@@ -638,6 +658,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppDisabilityDocumentsRoute: AppDisabilityDocumentsRoute,
   AppEmergencyRoute: AppEmergencyRoute,
+  AppFeedbackRoute: AppFeedbackRoute,
   AppFinancialRoute: AppFinancialRoute,
   AppInsurancePoliciesRoute: AppInsurancePoliciesRoute,
   AppLegalRoute: AppLegalRoute,

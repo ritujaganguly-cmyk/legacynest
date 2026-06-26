@@ -1,13 +1,17 @@
 import { createFileRoute, Outlet, redirect, Link, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? "legacynest.co.in@gmail.com";
+const ADMIN_EMAILS: string[] = [
+  "ganguly80@gmail.com",
+  "legacynest.co.in@gmail.com",
+  ...(import.meta.env.VITE_ADMIN_EMAIL ? [import.meta.env.VITE_ADMIN_EMAIL as string] : []),
+];
 
 export const Route = createFileRoute("/admin")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getSession();
     const email = data.session?.user?.email;
-    if (!email || email !== ADMIN_EMAIL) {
+    if (!email || !ADMIN_EMAILS.includes(email)) {
       throw redirect({ to: "/sign-in" });
     }
   },

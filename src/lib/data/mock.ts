@@ -1870,7 +1870,7 @@ export const dataService = {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await supabase
+      const { data, error } = await pdb
         .from("financial_assets").select("*").eq("user_id", user.id).order("created_at");
       if (error) throw error;
       return (data ?? []).map((r: Record<string, unknown>) => ({

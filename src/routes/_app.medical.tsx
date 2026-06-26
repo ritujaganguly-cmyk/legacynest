@@ -258,49 +258,20 @@ function MedicalRecordsTab() {
         }
 
         // Upload file to vault if one was selected and status is "done"
-        if (selectedFile && (markingDone === "done" || editing?.status === "done")) {
+        if (selectedFile && markingDone === "done") {
+          setUploadingFile(true);
           try {
-            setUploadingFile(true);            const uploadResult = await dataService.uploadVaultFile(selectedFile, editing.id);
-            if (!uploadResult) {
-              toast.error("Failed to upload document to vault - no URL returned");
-              setSaving(false);
-              return;
-            }
-            // Extract the storage path from the upload result URL
-            // URL format: https://...supabase.co/storage/v1/object/public/vault-documents/user_id/record_id/timestamp_filename
-            const pathMatch = uploadResult.match(/\/public\/(.+?)(?:\?|$)/);
-            const storagePath = pathMatch ? pathMatch[1] : null;
-
-            if (!storagePath) {
-              toast.error("Failed to determine storage path for document");
-              setSaving(false);
-              return;
-            }
-
-            // Add vault document entry linked to medical record
-            const docResult = await dataService.addVaultDocument({
+            const doc = await dataService.addVaultDocument({
               name: selectedFile.name,
               category: "Medical",
-              size: selectedFile.size,
-              status: "active",
-              isCriticalForEmergency: false,
+              notes: `Medical record — ${editing.title}`,
               medicalRecordId: editing.id,
-              storageBucketPath: storagePath,
             });
-
-            if (!docResult) {
-              toast.error("File uploaded but failed to create vault document entry");
-              setSaving(false);
-              return;
-            }
-
+            if (doc) await dataService.uploadVaultFile(selectedFile, doc.id);
             setSelectedFile(null);
-            toast.success(`Appointment marked as done. Document uploaded to vault.`);
+            toast.success("Appointment marked as done. Document uploaded to vault.");
           } catch (err) {
-            console.error("File upload error:", err);
             toast.error(`Failed to upload document: ${err instanceof Error ? err.message : "Unknown error"}`);
-            setSaving(false);
-            return;
           } finally {
             setUploadingFile(false);
           }
@@ -480,9 +451,9 @@ function MedicalRecordsTab() {
       }}>
         <DialogContent className="max-w-lg p-0">
           <div className="bg-card border-b border-border px-6 py-4">
-            <h2 className="text-lg font-semibold">
+            <DialogTitle className="text-lg font-semibold">
               {editing ? "Edit Appointment" : "Add Appointment"}
-            </h2>
+            </DialogTitle>
           </div>
           <div className="max-h-[calc(90vh-180px)] overflow-y-auto px-6 py-5 space-y-4">
             {!markingDone ? (
@@ -754,9 +725,9 @@ function MedicationsTab() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg p-0">
           <div className="sticky top-0 bg-card border-b border-border px-6 py-4">
-            <h2 className="text-lg font-semibold">
+            <DialogTitle className="text-lg font-semibold">
               {editing ? "Edit Medication" : "Add Medication"}
-            </h2>
+            </DialogTitle>
           </div>
           <div className="px-6 py-5 space-y-4">
             <InputField label="Medication Name" value={draft.name} onChange={(v) => set("name", v)} required />
@@ -1016,9 +987,9 @@ function TherapiesTab() {
       <Dialog open={open} onOpenChange={(o) => { if (!o) { setMarkingDone(null); setSelectedFile(null); setFileError(""); } setOpen(o); }}>
         <DialogContent className="max-w-lg p-0">
           <div className="sticky top-0 bg-card border-b border-border px-6 py-4">
-            <h2 className="text-lg font-semibold">
+            <DialogTitle className="text-lg font-semibold">
               {markingDone ? `Mark Session as ${markingDone === "done" ? "Done" : "Not Done"}` : editing ? "Edit Therapy" : "Add Therapy"}
-            </h2>
+            </DialogTitle>
           </div>
           <div className="max-h-[calc(90vh-180px)] overflow-y-auto px-6 py-5 space-y-4">
             {markingDone ? (
@@ -1213,9 +1184,9 @@ function HealthContactsTab() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg p-0">
           <div className="sticky top-0 bg-card border-b border-border px-6 py-4">
-            <h2 className="text-lg font-semibold">
+            <DialogTitle className="text-lg font-semibold">
               {editing ? "Edit Contact" : "Add Contact"}
-            </h2>
+            </DialogTitle>
           </div>
           <div className="px-6 py-5 space-y-4">
             <InputField label="Name" value={draft.name} onChange={(v) => set("name", v)} required />

@@ -25,6 +25,7 @@ function AdminShell() {
     { to: "/admin/emergency", label: "🚨 Emergency" },
     { to: "/admin/support", label: "📩 Support" },
     { to: "/admin/feedback", label: "💬 Feedback" },
+    { to: "/admin/users", label: "👤 Users" },
   ] as const;
 
   return (

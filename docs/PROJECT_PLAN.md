@@ -22,6 +22,45 @@ fully specified in `REDESIGN_PLAN.md`.
 
 ---
 
+## 1A. Target: 15 August 2026 launch (Independence Day)
+
+**15 Aug 2026 is the fixed public-launch milestone** (~6.5 weeks from 30 Jun). The
+launch bundles **M1 (stabilized full plan) + the M2 free emergency wedge** — a working
+free 10-minute emergency product *and* the full plan, all free. It is **date-driven:
+we cut scope, not the date.**
+
+**In scope for 15 Aug (must-have):**
+- All M1 launch gates: migrations live, emergency reliability, auth, legal pages,
+  backups, plus a QA pass.
+- M2 wedge: 4 break-glass blocks, the 10-minute onboarding, landing restructure.
+- Wallet card + free-flow instrumentation — *include if pace holds; these are the
+  first to cut to fast-follow if the date is threatened.*
+
+**Fast-follow (right after launch):** coordinator login-raise (needs the v2 role model).
+
+**Post-launch track (Sep–Nov):** all of Version 2 (M3).
+
+**6.5-week schedule (start 30 Jun):**
+| Week | Focus |
+|------|-------|
+| Wk 1 (30 Jun) | migrations live + backups; **start legal pages in parallel** (external turnaround); begin QA |
+| Wk 2 (7 Jul) | emergency reliability hardening; finish QA |
+| Wk 3 (14 Jul) | auth hardening (signup + verification) |
+| Wk 4 (21 Jul) | monitoring + mobile pass → **M1 internally ready ~25 Jul** |
+| Wk 5 (28 Jul) | 4 break-glass blocks + landing restructure |
+| Wk 6 (4 Aug) | 10-minute onboarding + wallet card |
+| Wk 7 (11–15 Aug) | instrumentation + polish + final QA → **launch 15 Aug** |
+
+**Two things most likely to threaten the date:** (1) legal-page turnaround — so start it
+in week 1, in parallel; (2) the week-7 buffer — protect it. If pace slips, cut the
+wallet card and instrumentation to fast-follow and launch with
+M1 + break-glass + onboarding.
+
+**Milestone target dates:** M1 internally ready **~25 Jul**; public launch
+(M1 + M2 wedge) **15 Aug**; Version 2 (M3) **~late Oct**.
+
+---
+
 ## 2. M0 — Where we are today
 
 **Built and deployed** (Vercel, `ritujaganguly-cmyk/legacynest`):

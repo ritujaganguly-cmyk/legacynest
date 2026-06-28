@@ -1,15 +1,30 @@
 import { Link } from "@tanstack/react-router";
 import { Map } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { CHAPTERS } from "@/lib/journey";
 
-/**
- * Slim contextual banner shown at the top of each section page.
- * Tells the user which chapter they're on in the journey.
- * Clicking it takes them back to the dashboard journey map.
- */
 export function ChapterBanner({ chapterKey }: { chapterKey: string }) {
   const chapter = CHAPTERS.find((c) => c.key === chapterKey);
-  if (!chapter) return null;
+
+  const { data: progress } = useQuery({
+    queryKey: ["plan_progress", chapterKey],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data } = await supabase
+        .from("plan_progress")
+        .select("is_complete")
+        .eq("user_id", user.id)
+        .eq("section", chapterKey)
+        .maybeSingle();
+      return data;
+    },
+    staleTime: 60 * 1000,
+  });
+
+  // Hide banner once the chapter is marked complete
+  if (!chapter || progress?.is_complete) return null;
 
   return (
     <Link

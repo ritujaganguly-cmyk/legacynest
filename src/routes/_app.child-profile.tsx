@@ -118,17 +118,25 @@ function ChildProfilePage() {
       if (!saved) throw new Error("Save returned null — check Supabase logs.");
       void dataService.markSectionComplete("child_profile");
       if (card === 1 && udidFile && hasUdid) {
-        try {
-          const doc = await dataService.addVaultDocument({
-            name: `UDID Card — ${profile.name || "Child"}`,
-            category: "Identity",
-            notes: profile.udidNumber ? `UDID: ${profile.udidNumber}` : undefined,
-          });
-          if (doc) await dataService.uploadVaultFile(udidFile, doc.id);
-          setUdidFile(null);
-        } catch { /* non-blocking */ }
+        const doc = await dataService.addVaultDocument({
+          name: `UDID Card — ${profile.name || "Child"}`,
+          category: "Disability",
+          notes: profile.udidNumber ? `UDID: ${profile.udidNumber}` : undefined,
+        });
+        if (doc) {
+          const uploaded = await dataService.uploadVaultFile(udidFile, doc.id);
+          if (uploaded) {
+            setUdidFile(null);
+            toast.success("Profile saved. UDID Card uploaded to Digital Vault.");
+          } else {
+            toast.error("Profile saved, but UDID Card upload failed. Please try again from the Vault.");
+          }
+        } else {
+          toast.error("Profile saved, but could not create vault entry. Please try again.");
+        }
+      } else {
+        toast.success("Saved successfully!");
       }
-      toast.success("Saved successfully!");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save. Please try again.";
       toast.error(msg);

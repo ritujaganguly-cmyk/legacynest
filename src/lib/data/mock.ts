@@ -1724,13 +1724,14 @@ export const dataService = {
           child_id: null,
           document_name: doc.name,
           category: doc.category,
+          notes: doc.notes ?? null,
           verification_status: doc.status ?? "Pending Review",
           file_size_bytes: doc.size,
           document_size: doc.size,
           is_critical_for_emergency: doc.isCriticalForEmergency ?? false,
-          medical_record_id: doc.medicalRecordId,
-          therapy_id: doc.therapyId,
-          storage_bucket_path: doc.storageBucketPath,
+          medical_record_id: doc.medicalRecordId ?? null,
+          therapy_id: doc.therapyId ?? null,
+          storage_bucket_path: doc.storageBucketPath ?? null,
           updated_at: new Date().toISOString(),
         })
         .select().maybeSingle();

@@ -37,10 +37,10 @@ export function DataRights() {
     try {
       const { success, error } = await deleteAccount();
       if (success) {
-        toast.success("Account deletion requested. All data will be permanently removed.");
+        toast.success("Account and all data permanently deleted.");
         window.location.assign("/");
       } else {
-        toast.error(error ?? "Deletion failed. Contact support.");
+        toast.error(error ?? "Deletion failed. Please contact legacynest.co.in@gmail.com");
         setDeleteStep("confirm");
       }
     } catch {

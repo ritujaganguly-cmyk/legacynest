@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ChapterBanner } from "@/components/ChapterBanner";
 import { useState, useEffect } from "react";
-import { Baby, Loader2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Baby, Loader2, FileText, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { dataService, type ChildProfile } from "@/lib/data/mock";
 import { ProfileImagePicker } from "@/components/ProfileImagePicker";
@@ -75,6 +76,7 @@ function Card({ title, children, onSave, saving }: {
 }
 
 function ChildProfilePage() {
+  const qc = useQueryClient();
   const [profile, setProfile] = useState<ChildProfile>(emptyProfile);
   const [savingCard1, setSavingCard1] = useState(false);
   const [savingCard2, setSavingCard2] = useState(false);
@@ -85,6 +87,15 @@ function ChildProfilePage() {
   const [udidFile, setUdidFile] = useState<File | null>(null);
   const [childImage, setChildImage] = useState<string | null>(null);
   const [userId, setUserId] = useState<string>("");
+
+  // Load vault docs to find the uploaded UDID card
+  const { data: vaultDocs = [] } = useQuery({
+    queryKey: ["vault"],
+    queryFn: () => dataService.listVaultDocuments(),
+  });
+  const udidVaultDoc = vaultDocs.find(
+    d => d.name.toLowerCase().includes("udid") && d.category === "Disability" && d.storagePath
+  );
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -127,6 +138,7 @@ function ChildProfilePage() {
           const uploaded = await dataService.uploadVaultFile(udidFile, doc.id);
           if (uploaded) {
             setUdidFile(null);
+            qc.invalidateQueries({ queryKey: ["vault"] });
             toast.success("Profile saved. UDID Card uploaded to Digital Vault.");
           } else {
             toast.error("Profile saved, but UDID Card upload failed. Please try again from the Vault.");
@@ -283,6 +295,21 @@ function ChildProfilePage() {
                   className={inputCls}
                   onChange={(e) => setUdidFile(e.target.files?.[0] || null)}
                 />
+                {udidVaultDoc && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const url = await dataService.getVaultFileSignedUrl(udidVaultDoc.storagePath!);
+                      if (url) window.open(url, "_blank");
+                      else toast.error("Could not generate download link.");
+                    }}
+                    className="mt-2 flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    View uploaded UDID Card
+                    <ExternalLink className="h-3 w-3" />
+                  </button>
+                )}
               </Field>
             </div>
           )}

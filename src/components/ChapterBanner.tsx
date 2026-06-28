@@ -4,11 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CHAPTERS } from "@/lib/journey";
 
-export function ChapterBanner({ chapterKey }: { chapterKey: string }) {
+export function ChapterBanner({ chapterKey, sectionKey }: { chapterKey: string; sectionKey?: string }) {
   const chapter = CHAPTERS.find((c) => c.key === chapterKey);
+  // sectionKey is what's stored in plan_progress; falls back to chapterKey when they match
+  const progressKey = sectionKey ?? chapterKey;
 
   const { data: progress } = useQuery({
-    queryKey: ["plan_progress", chapterKey],
+    queryKey: ["plan_progress", progressKey],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
@@ -16,7 +18,7 @@ export function ChapterBanner({ chapterKey }: { chapterKey: string }) {
         .from("plan_progress")
         .select("is_complete")
         .eq("user_id", user.id)
-        .eq("section", chapterKey)
+        .eq("section", progressKey)
         .maybeSingle();
       return data;
     },

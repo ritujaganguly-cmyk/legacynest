@@ -164,7 +164,7 @@ function ChildProfilePage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <ChapterBanner chapterKey="child" />
+      <ChapterBanner chapterKey="child" sectionKey="child_profile" />
       <SPDINotice section="child_profile" />
 
       {/* Header */}

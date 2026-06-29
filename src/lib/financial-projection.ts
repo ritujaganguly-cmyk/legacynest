@@ -2,10 +2,12 @@
  * LegacyNest — Simplified Lifetime Financial Model
  *
  * Mental model:
- *   Phase 1 (now → parents gone): child has current expenses + their own income.
- *   Phase 2 (after parents gone): current expenses + additional care costs
- *     minus any expenses that get waived, plus child income that continues,
- *     plus returns on assets assigned to child via will/trust.
+ *   Phase 1 (now → parents gone): parents cover the child's current expenses from
+ *     their own income; the child's earmarked corpus (will/trust assets) compounds
+ *     untouched. It is NOT drawn down while the parents are alive.
+ *   Phase 2 (after parents gone): the corpus must now carry the child — current
+ *     expenses that continue + additional care costs, minus any waived expenses,
+ *     net of the child's own income that survives the parents.
  *
  * Investment return assumption: 8% per annum flat.
  * All monetary values in ₹.
@@ -105,44 +107,52 @@ export function runProjection(
   const monthlyPhase2Net = monthlyPhase2Income - monthlyPhase2Expense;
 
   // ── Year-by-year simulation ────────────────────────────────
+  // While parents are alive (Phase 1) they cover the child's current expenses
+  // from their own income, so the child's earmarked corpus compounds untouched.
+  // Drawdown begins only AFTER parents are gone (Phase 2): the corpus must then
+  // fund the child's ongoing expenses, net of the child's own surviving income.
   let corpus = currentCorpus;
   let depletionChildAge: number | null = null;
   let corpusAtTransition = 0;
   const years: ProjectionResult["years"] = [];
 
   for (let t = 0; t <= totalYears; t++) {
-    const phase: 1|2|3 = t < yearsToParentDeath ? 1 : 3;
+    const parentsGone = t >= yearsToParentDeath;
+    const phase: 1|2|3 = parentsGone ? 3 : 1;
 
-    // Expenses this year
-    let annualExpense = 0;
-    for (const e of expenses) {
-      if (e.waivedAfterParents && phase === 3) continue;
-      if (e.phase3Only && phase !== 3) continue;
-      annualExpense += inflated(e.monthlyAmount, e.inflationRate, t);
-    }
-
-    // Income this year (child's own income)
-    let annualIncome = 0;
-    for (const i of income) {
-      if (!i.survivesParents && phase === 3) continue;
-      annualIncome += inflated(i.monthlyAmount, i.incrementRate, t);
-    }
-
-    const netFlow = annualIncome - annualExpense;
-    corpus = corpus * (1 + RETURN_RATE) + netFlow;
-
+    // Corpus available the moment parents are gone — captured before any drawdown.
     if (t === yearsToParentDeath) {
       corpusAtTransition = Math.max(0, corpus);
     }
 
-    if (corpus <= 0 && depletionChildAge === null) {
+    let annualExpense = 0;
+    let annualIncome = 0;
+
+    if (parentsGone) {
+      // Parents gone: corpus must now carry the child.
+      for (const e of expenses) {
+        if (e.waivedAfterParents) continue;          // these costs disappear
+        annualExpense += inflated(e.monthlyAmount, e.inflationRate, t);
+      }
+      for (const i of income) {
+        if (!i.survivesParents) continue;            // only income that continues
+        annualIncome += inflated(i.monthlyAmount, i.incrementRate, t);
+      }
+      corpus = corpus * (1 + RETURN_RATE) + annualIncome - annualExpense;
+    } else {
+      // Parents alive: they cover current expenses; the corpus compounds untouched.
+      corpus = corpus * (1 + RETURN_RATE);
+    }
+
+    // Depletion can only happen once the corpus is actually carrying the child.
+    if (parentsGone && corpus <= 0 && depletionChildAge === null) {
       depletionChildAge = childCurrentAge + t;
       corpus = 0;
     }
 
     years.push({
       year: t, childAge: childCurrentAge + t, phase,
-      annualIncome, annualExpense, netFlow,
+      annualIncome, annualExpense, netFlow: annualIncome - annualExpense,
       corpus: Math.max(0, corpus),
     });
   }

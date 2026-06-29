@@ -21,6 +21,19 @@ export type VaultDocument = {
   notes?: string;
 };
 
+export type BreakGlassBlock = "daily_care" | "medical" | "financial" | "legal";
+export type BreakGlassMember = {
+  id: string;
+  block: BreakGlassBlock;
+  rank: "primary" | "backup";
+  name: string;
+  email: string;
+  phone?: string;
+  relationship?: string;
+  status: "draft" | "invited" | "accepted" | "declined";
+  accessToken?: string;
+};
+
 export type ChildProfile = {
   id: string;
   name: string;
@@ -528,6 +541,18 @@ const toVault = (r: VaultRow): VaultDocument => ({
   notes: r.notes ?? undefined,
 });
 
+const toBreakGlassMember = (r: Record<string, unknown>): BreakGlassMember => ({
+  id: r.id as string,
+  block: r.block as BreakGlassBlock,
+  rank: (r.rank as "primary" | "backup") ?? "primary",
+  name: (r.name as string) ?? "",
+  email: (r.email as string) ?? "",
+  phone: (r.phone as string) ?? undefined,
+  relationship: (r.relationship as string) ?? undefined,
+  status: (r.status as BreakGlassMember["status"]) ?? "draft",
+  accessToken: (r.access_token as string) ?? undefined,
+});
+
 /* ---------------------- ROW TYPES ---------------------- */
 type PersonRow = {
   id: string;
@@ -916,6 +941,78 @@ export const dataService = {
       if (p.financialBridgeNotes !== undefined)    patch.financial_bridge_notes = p.financialBridgeNotes;
       const { error } = await pdb.from("emergency_plan").upsert(patch, { onConflict: "user_id" });
       if (error) throw error;
+      return true;
+    }, false);
+  },
+
+  /* BREAK-GLASS BLOCKS (4 info summaries) + per-domain caregiver members */
+  async getBreakGlassBlocks(): Promise<Record<BreakGlassBlock, string>> {
+    return safe(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return {} as Record<BreakGlassBlock, string>;
+      const { data } = await pdb.from("emergency_plan").select("break_glass").eq("user_id", user.id).maybeSingle();
+      return ((data as { break_glass?: Record<BreakGlassBlock, string> } | null)?.break_glass ?? {}) as Record<BreakGlassBlock, string>;
+    }, {} as Record<BreakGlassBlock, string>);
+  },
+  async saveBreakGlassBlocks(blocks: Record<BreakGlassBlock, string>): Promise<boolean> {
+    return safe(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("not authenticated");
+      const { error } = await pdb.from("emergency_plan")
+        .upsert({ user_id: user.id, break_glass: blocks, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      if (error) throw error;
+      return true;
+    }, false);
+  },
+  async listBreakGlassMembers(): Promise<BreakGlassMember[]> {
+    return safe(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data, error } = await supabase.from("break_glass_members")
+        .select("*").eq("user_id", user.id).order("block").order("rank");
+      if (error) throw error;
+      return (data ?? []).map(toBreakGlassMember);
+    }, []);
+  },
+  async upsertBreakGlassMember(m: {
+    block: BreakGlassBlock; rank: "primary" | "backup"; name: string; email: string; phone?: string; relationship?: string;
+  }): Promise<BreakGlassMember | null> {
+    return safe(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data, error } = await supabase.from("break_glass_members")
+        .upsert({
+          user_id: user.id, block: m.block, rank: m.rank,
+          name: m.name || null, email: m.email,
+          phone: m.phone || null, relationship: m.relationship || null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,block,rank" })
+        .select().maybeSingle();
+      if (error) throw error;
+      return data ? toBreakGlassMember(data as Record<string, unknown>) : null;
+    }, null);
+  },
+  async deleteBreakGlassMember(id: string): Promise<boolean> {
+    return safe(async () => {
+      const { error } = await supabase.from("break_glass_members").delete().eq("id", id);
+      if (error) throw error;
+      return true;
+    }, false);
+  },
+  async sendBreakGlassInvite(member: BreakGlassMember, ctx: { inviterName: string; childName: string }): Promise<boolean> {
+    return safe(async () => {
+      if (!member.accessToken) throw new Error("Invite link not ready — save the member first.");
+      const acceptUrl = `${window.location.origin}/accept/${member.accessToken}`;
+      const { error } = await supabase.functions.invoke("send-break-glass-invite", {
+        body: {
+          to: member.email, memberName: member.name, block: member.block, rank: member.rank,
+          acceptUrl, inviterName: ctx.inviterName, childName: ctx.childName,
+        },
+      });
+      if (error) throw error;
+      await supabase.from("break_glass_members")
+        .update({ status: "invited", invited_at: new Date().toISOString() })
+        .eq("id", member.id);
       return true;
     }, false);
   },

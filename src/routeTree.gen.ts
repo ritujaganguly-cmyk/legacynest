@@ -18,10 +18,12 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CTokenRouteImport } from './routes/c.$token'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AdminFeedbackRouteImport } from './routes/admin.feedback'
 import { Route as AdminEmergencyRouteImport } from './routes/admin.emergency'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
+import { Route as AcceptTokenRouteImport } from './routes/accept.$token'
 import { Route as AppVaultRouteImport } from './routes/_app.vault'
 import { Route as AppSuccessionRouteImport } from './routes/_app.succession'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
@@ -85,6 +87,11 @@ const AuthConfirmRoute = AuthConfirmRouteImport.update({
   path: '/auth/confirm',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSupportRoute = AdminSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -104,6 +111,11 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AdminRoute,
+} as any)
+const AcceptTokenRoute = AcceptTokenRouteImport.update({
+  id: '/accept/$token',
+  path: '/accept/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppVaultRoute = AppVaultRouteImport.update({
   id: '/vault',
@@ -221,10 +233,12 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/succession': typeof AppSuccessionRoute
   '/vault': typeof AppVaultRoute
+  '/accept/$token': typeof AcceptTokenRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emergency': typeof AdminEmergencyRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/users': typeof AdminUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/c/$token': typeof CTokenRoute
 }
@@ -253,10 +267,12 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/succession': typeof AppSuccessionRoute
   '/vault': typeof AppVaultRoute
+  '/accept/$token': typeof AcceptTokenRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emergency': typeof AdminEmergencyRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/users': typeof AdminUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/c/$token': typeof CTokenRoute
 }
@@ -287,10 +303,12 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/succession': typeof AppSuccessionRoute
   '/_app/vault': typeof AppVaultRoute
+  '/accept/$token': typeof AcceptTokenRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emergency': typeof AdminEmergencyRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/users': typeof AdminUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/c/$token': typeof CTokenRoute
 }
@@ -321,10 +339,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/succession'
     | '/vault'
+    | '/accept/$token'
     | '/admin/dashboard'
     | '/admin/emergency'
     | '/admin/feedback'
     | '/admin/support'
+    | '/admin/users'
     | '/auth/confirm'
     | '/c/$token'
   fileRoutesByTo: FileRoutesByTo
@@ -353,10 +373,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/succession'
     | '/vault'
+    | '/accept/$token'
     | '/admin/dashboard'
     | '/admin/emergency'
     | '/admin/feedback'
     | '/admin/support'
+    | '/admin/users'
     | '/auth/confirm'
     | '/c/$token'
   id:
@@ -386,10 +408,12 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/succession'
     | '/_app/vault'
+    | '/accept/$token'
     | '/admin/dashboard'
     | '/admin/emergency'
     | '/admin/feedback'
     | '/admin/support'
+    | '/admin/users'
     | '/auth/confirm'
     | '/c/$token'
   fileRoutesById: FileRoutesById
@@ -402,6 +426,7 @@ export interface RootRouteChildren {
   ReviewRoute: typeof ReviewRoute
   SignInRoute: typeof SignInRoute
   SupportRoute: typeof SupportRoute
+  AcceptTokenRoute: typeof AcceptTokenRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
   CTokenRoute: typeof CTokenRoute
 }
@@ -471,6 +496,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthConfirmRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/support': {
       id: '/admin/support'
       path: '/support'
@@ -498,6 +530,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/dashboard'
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/accept/$token': {
+      id: '/accept/$token'
+      path: '/accept/$token'
+      fullPath: '/accept/$token'
+      preLoaderRoute: typeof AcceptTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/vault': {
       id: '/_app/vault'
@@ -677,6 +716,7 @@ interface AdminRouteChildren {
   AdminEmergencyRoute: typeof AdminEmergencyRoute
   AdminFeedbackRoute: typeof AdminFeedbackRoute
   AdminSupportRoute: typeof AdminSupportRoute
+  AdminUsersRoute: typeof AdminUsersRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -684,6 +724,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEmergencyRoute: AdminEmergencyRoute,
   AdminFeedbackRoute: AdminFeedbackRoute,
   AdminSupportRoute: AdminSupportRoute,
+  AdminUsersRoute: AdminUsersRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -696,6 +737,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReviewRoute: ReviewRoute,
   SignInRoute: SignInRoute,
   SupportRoute: SupportRoute,
+  AcceptTokenRoute: AcceptTokenRoute,
   AuthConfirmRoute: AuthConfirmRoute,
   CTokenRoute: CTokenRoute,
 }

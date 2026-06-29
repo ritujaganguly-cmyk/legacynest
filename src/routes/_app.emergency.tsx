@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { supabase, pdb } from "@/integrations/supabase/client";
 import { CareDeliveryPlan } from "@/components/emergency/CareDeliveryPlan";
+import { BreakGlassBlocks } from "@/components/emergency/BreakGlassBlocks";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Link } from "@tanstack/react-router";
@@ -417,6 +418,9 @@ function EmergencyPage() {
           {isActive ? "Stand Down" : "🚨 Activate Emergency"}
         </button>
       </div>
+
+      {/* Break-glass information — 4 domain blocks with primary/backup caregivers */}
+      <BreakGlassBlocks />
 
       {/* Emergency Coordinator -- CALL FIRST */}
       <div className="legacy-card border-l-4 border-l-red-500 p-5">

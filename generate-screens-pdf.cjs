@@ -36,7 +36,7 @@ const screenshots = [
 ];
 
 // Find screenshot files in temp dir
-const tempBase = 'C:\\Users\\SIDHWA~1\\AppData\\Local\\Temp\\claude\\C--LegacyNest-Git-GitProjectGanguly80-legacynest\\ccdb1591-07e2-41ca-b02e-196dd9e79f9f\\screenshots';
+const tempBase = 'C:\\Users\\sidhwartha\\AppData\\Local\\Temp\\claude';
 
 function findScreenshot(id) {
   // Try multiple possible locations
@@ -65,7 +65,7 @@ function findScreenshot(id) {
 }
 
 async function generatePDF() {
-  const outputPath = 'C:\\LegacyNest\\Git\\GitProjectGanguly80\\legacynest\\LegacyNest-UI-Design-Copyright-Evidence.pdf';
+  const outputPath = path.join(__dirname, 'LegacyNest-UI-Design-Copyright-Evidence.pdf');
 
   const doc = new PDFDocument({
     size: 'A4',

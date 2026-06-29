@@ -18,6 +18,7 @@ import {
   HeartHandshake,
   Lock,
   Bell,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -194,15 +195,19 @@ function Landing() {
                 <PlayCircle className="h-5 w-5 text-primary" /> Watch Introduction
               </button>
             </div>
-            <div className="mt-5 flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                {["A", "B", "C"].map((l) => (
-                  <div key={l} className="h-8 w-8 rounded-full bg-primary/20 ring-2 ring-background flex items-center justify-center text-[10px] font-bold text-primary">
-                    {l}
-                  </div>
-                ))}
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2.5">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-sm text-muted-foreground">Encrypted in transit &amp; at rest — only you can see your data</span>
               </div>
-              <p className="text-sm text-muted-foreground">Trusted by families across India</p>
+              <div className="flex items-center gap-2">
+                <Trash2 className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-sm text-muted-foreground">Delete your data &amp; account anytime</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-sm text-muted-foreground">Built for India's DPDP Act &amp; SPDI Rules</span>
+              </div>
             </div>
           </div>
         </div>

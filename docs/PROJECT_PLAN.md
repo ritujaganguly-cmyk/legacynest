@@ -22,7 +22,26 @@ fully specified in `REDESIGN_PLAN.md`.
 
 ---
 
-## 1A. Target: 15 August 2026 launch (Independence Day)
+## 1A. Pre-requisite: Code & Repo Clean-up — target 10 July 2026
+
+**Before any milestone work begins, the codebase and GitHub must be in a clean,
+releasable state owned entirely by GitProjectRituja.**
+
+| # | Task | Done by |
+|---|------|---------|
+| 1 | All edits, commits and pushes go to `ritujaganguly-cmyk/legacynest` only — zero accidental Ganguly80 touches | Ongoing |
+| 2 | Remove / replace every remaining hardcoded `GitProjectGanguly80` path in source files | 10 Jul |
+| 3 | Relaunch Claude Code from `C:\LegacyNest\Git\GitProjectRituja\legacynest` so the session cwd, preview server and scratchpad are all Rituja | 10 Jul |
+| 4 | Run pending migrations **048–051** on the live Supabase instance; verify every module loads | 10 Jul |
+| 5 | `routeTree.gen.ts` and any other generated/dirty files committed or discarded — clean `git status` | 10 Jul |
+| 6 | No open uncommitted changes on main; branch `main` in sync with `origin/main` | 10 Jul |
+
+**Definition of done:** `git status` is clean, `git log --oneline -1` is on Rituja, and
+the app builds without errors from a fresh `npm run build`.
+
+---
+
+## 1B. Target: 15 August 2026 launch (Independence Day)
 
 **15 Aug 2026 is the fixed public-launch milestone** (~6.5 weeks from 30 Jun). The
 launch bundles **M1 (stabilized full plan) + the M2 free emergency wedge** — a working

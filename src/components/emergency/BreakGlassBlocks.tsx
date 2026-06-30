@@ -13,11 +13,12 @@ const TIMER_OPTIONS = [
   { label: "24 hours", hours: 24 },
 ];
 
-const BLOCKS: { key: BreakGlassBlock; label: string; icon: typeof Heart; hint: string; categories: VaultDocument["category"][] }[] = [
-  { key: "daily_care", label: "Daily Care", icon: Heart,      hint: "Routine, comfort items, how they communicate, what calms them, what to avoid.", categories: ["Identity", "Disability", "Educational", "Government"] },
-  { key: "medical",    label: "Medical",    icon: HeartPulse, hint: "Conditions, medications & doses, allergies, treating doctors.",               categories: ["Medical", "Disability"] },
-  { key: "financial",  label: "Financial",  icon: Landmark,   hint: "Where funds are, who to contact, immediate money needs.",                     categories: ["Financial", "Insurance"] },
-  { key: "legal",      label: "Legal",      icon: Scale,      hint: "Guardianship status, where key documents are, who has authority.",            categories: ["Legal", "Government", "Identity"] },
+// Soft, distinct accents per block so the four cards are easy to tell apart at a glance.
+const BLOCKS: { key: BreakGlassBlock; label: string; icon: typeof Heart; hint: string; categories: VaultDocument["category"][]; border: string; iconBg: string; iconText: string }[] = [
+  { key: "daily_care", label: "Daily Care", icon: Heart,      hint: "Routine, comfort items, how they communicate, what calms them, what to avoid.", categories: ["Identity", "Disability", "Educational", "Government"], border: "border-rose-200",   iconBg: "bg-rose-50",   iconText: "text-rose-500" },
+  { key: "medical",    label: "Medical",    icon: HeartPulse, hint: "Conditions, medications & doses, allergies, treating doctors.",               categories: ["Medical", "Disability"],                                 border: "border-sky-200",    iconBg: "bg-sky-50",    iconText: "text-sky-500" },
+  { key: "financial",  label: "Financial",  icon: Landmark,   hint: "Where funds are, who to contact, immediate money needs.",                     categories: ["Financial", "Insurance"],                                border: "border-amber-200",  iconBg: "bg-amber-50",  iconText: "text-amber-600" },
+  { key: "legal",      label: "Legal",      icon: Scale,      hint: "Guardianship status, where key documents are, who has authority.",            categories: ["Legal", "Government", "Identity"],                       border: "border-violet-200", iconBg: "bg-violet-50", iconText: "text-violet-500" },
 ];
 
 const BLOCK_LABEL: Record<BreakGlassBlock, string> = {
@@ -342,13 +343,15 @@ export function BreakGlassBlocks() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">
-        {BLOCKS.map(({ key, label, icon: Icon, hint, categories }) => {
+        {BLOCKS.map(({ key, label, icon: Icon, hint, categories, border, iconBg, iconText }) => {
           const blockDocs = vaultDocs.filter(d => categories.includes(d.category));
           const sharedIds = (bgFiles as Record<BreakGlassBlock, string[]>)[key] ?? [];
           return (
-            <div key={key} className="rounded-2xl border border-border bg-surface-low p-4 space-y-3">
+            <div key={key} className={`rounded-2xl border-2 ${border} bg-surface-low p-4 space-y-3`}>
               <div className="flex items-center gap-2">
-                <Icon className="h-5 w-5 text-primary shrink-0" />
+                <span className={`h-8 w-8 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
+                  <Icon className={`h-4 w-4 ${iconText}`} />
+                </span>
                 <h3 className="font-semibold text-foreground">{label}</h3>
               </div>
               <textarea

@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Heart, HeartPulse, Landmark, Scale, Mail, Copy, Trash2, Check, Clock, X, Loader2, KeyRound, FileText } from "lucide-react";
+import { Heart, HeartPulse, Landmark, Scale, Mail, Copy, Trash2, Check, Clock, X, Loader2, KeyRound, FileText, ChevronDown, ExternalLink, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { dataService, type BreakGlassBlock, type BreakGlassMember, type VaultDocument } from "@/lib/data/mock";
 
@@ -42,7 +42,7 @@ async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
-function buildInviteMailto(member: { name: string; email: string; block: BreakGlassBlock; rank: "primary" | "backup"; accessToken?: string }, inviterName: string, childName: string): string {
+function buildInviteText(member: { name: string; email: string; block: BreakGlassBlock; rank: "primary" | "backup"; accessToken?: string }, inviterName: string, childName: string) {
   const link = `${window.location.origin}/accept/${member.accessToken}`;
   const who = inviterName || "A LegacyNest family";
   const label = BLOCK_LABEL[member.block];
@@ -53,8 +53,30 @@ function buildInviteMailto(member: { name: string; email: string; block: BreakGl
     `in their LegacyNest emergency plan.\n\n` +
     `Please review and respond using the link below:\n${link}\n\n` +
     `Thank you,\n${who}`;
-  return `mailto:${member.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return { to: member.email, subject, body, link };
 }
+
+type EmailProvider = "gmail" | "outlook" | "yahoo" | "default";
+
+/** Builds a URL for each provider. Gmail/Outlook/Yahoo are real web pages that open
+ *  in a new tab and pre-fill the compose form directly — they work regardless of
+ *  what (if any) mail app is registered as the OS default, unlike mailto:. */
+function buildEmailUrl(provider: EmailProvider, t: { to: string; subject: string; body: string }): string {
+  const to = encodeURIComponent(t.to), su = encodeURIComponent(t.subject), bo = encodeURIComponent(t.body);
+  switch (provider) {
+    case "gmail":   return `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${su}&body=${bo}`;
+    case "outlook": return `https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${su}&body=${bo}`;
+    case "yahoo":   return `https://compose.mail.yahoo.com/?to=${to}&subject=${su}&body=${bo}`;
+    case "default": return `mailto:${t.to}?subject=${su}&body=${bo}`;
+  }
+}
+
+const EMAIL_PROVIDERS: { key: EmailProvider; label: string; opensNewTab: boolean }[] = [
+  { key: "gmail",   label: "Gmail",                opensNewTab: true },
+  { key: "outlook", label: "Outlook",               opensNewTab: true },
+  { key: "yahoo",   label: "Yahoo Mail",             opensNewTab: true },
+  { key: "default", label: "Default email app",      opensNewTab: false },
+];
 
 const INPUT = "w-full rounded-lg border border-border bg-surface-low px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
@@ -82,8 +104,19 @@ function MemberRow({
   const [name, setName] = useState(member?.name ?? "");
   const [email, setEmail] = useState(member?.email ?? "");
   const [busy, setBusy] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setName(member?.name ?? ""); setEmail(member?.email ?? ""); }, [member?.id, member?.name, member?.email]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [menuOpen]);
 
   const dirty = name !== (member?.name ?? "") || email !== (member?.email ?? "");
   const emailValid = /\S+@\S+\.\S+/.test(email);
@@ -104,28 +137,33 @@ function MemberRow({
     return m;
   }
 
-  async function openEmail() {
+  async function sendVia(provider: EmailProvider) {
     if (!emailValid) { toast.error("Enter a valid email first."); return; }
+    setMenuOpen(false);
     setBusy(true);
     const m = await ensureSaved();
     setBusy(false);
     if (!m?.accessToken) { toast.error("Could not prepare the invite link."); return; }
 
-    // Copy the link first as a safety net — if the device has no mail app wired up,
-    // the mailto trigger below silently does nothing visible, but the link is ready to paste.
-    const link = `${window.location.origin}/accept/${m.accessToken}`;
-    const copied = await copyToClipboard(link);
+    const t = buildInviteText(m, inviterName, childName);
+    const url = buildEmailUrl(provider, t);
+    const providerInfo = EMAIL_PROVIDERS.find(p => p.key === provider)!;
 
-    // window.location.href is the reliable way to trigger mailto: — window.open(_blank)
-    // leaves a blank tab behind when no desktop mail client is registered.
-    window.location.href = buildInviteMailto(m, inviterName, childName);
-
-    toast.success(
-      copied
-        ? "Opening your email app… link also copied, in case it doesn't open."
-        : "Opening your email app…",
-      { duration: 4000 },
-    );
+    if (providerInfo.opensNewTab) {
+      // Gmail/Outlook/Yahoo are real web pages — open reliably in a new tab, pre-filled.
+      window.open(url, "_blank", "noopener,noreferrer");
+      toast.success(`Opening ${providerInfo.label} with the invite ready to send…`);
+    } else {
+      // mailto: only works if a desktop mail app is registered as the OS default.
+      const copied = await copyToClipboard(t.link);
+      window.location.href = url;
+      toast.success(
+        copied
+          ? "Opening your default email app… link also copied, in case it doesn't open."
+          : "Opening your default email app…",
+        { duration: 4000 },
+      );
+    }
 
     if (m.status === "draft") {
       const ok = await dataService.markBreakGlassInviteSent(m.id);
@@ -164,11 +202,25 @@ function MemberRow({
         <input className={INPUT} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} onBlur={save} />
       </div>
       <div className="flex items-center gap-2 flex-wrap">
-        <button onClick={openEmail} disabled={busy || !emailValid}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-xs font-semibold hover:bg-primary/90 disabled:opacity-50">
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
-          {member?.status === "invited" || member?.status === "accepted" ? "Re-open email" : "Open email to invite"}
-        </button>
+        <div ref={menuRef} className="relative">
+          <button onClick={() => setMenuOpen(o => !o)} disabled={busy || !emailValid}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-xs font-semibold hover:bg-primary/90 disabled:opacity-50">
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
+            {member?.status === "invited" || member?.status === "accepted" ? "Re-send invite" : "Send invite"}
+            <ChevronDown className="h-3 w-3" />
+          </button>
+          {menuOpen && (
+            <div className="absolute z-20 top-full left-0 mt-1 w-48 rounded-lg border border-border bg-card shadow-lg overflow-hidden">
+              {EMAIL_PROVIDERS.map(p => (
+                <button key={p.key} onClick={() => sendVia(p.key)}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2 text-xs text-left hover:bg-surface-low transition-colors">
+                  <span>{p.label}</span>
+                  {p.opensNewTab ? <ExternalLink className="h-3 w-3 text-muted-foreground" /> : <Smartphone className="h-3 w-3 text-muted-foreground" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button onClick={copyLink} disabled={busy}
           className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-low disabled:opacity-50">
           <Copy className="h-3.5 w-3.5" /> Copy link

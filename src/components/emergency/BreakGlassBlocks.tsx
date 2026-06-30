@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Heart, HeartPulse, Landmark, Scale, Mail, Copy, Trash2, Check, Clock, X, Loader2, KeyRound, FileText, ChevronDown, ExternalLink, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { dataService, type BreakGlassBlock, type BreakGlassMember, type VaultDocument } from "@/lib/data/mock";
+import { EMAIL_PROVIDERS, type EmailProvider, sendViaProvider, copyToClipboard } from "@/lib/email-providers";
 
 const BLOCKS: { key: BreakGlassBlock; label: string; icon: typeof Heart; hint: string; categories: VaultDocument["category"][] }[] = [
   { key: "daily_care", label: "Daily Care", icon: Heart,      hint: "Routine, comfort items, how they communicate, what calms them, what to avoid.", categories: ["Identity", "Disability", "Educational", "Government"] },
@@ -14,33 +15,6 @@ const BLOCKS: { key: BreakGlassBlock; label: string; icon: typeof Heart; hint: s
 const BLOCK_LABEL: Record<BreakGlassBlock, string> = {
   daily_care: "Daily Care", medical: "Medical", financial: "Financial", legal: "Legal",
 };
-
-/** Copies text to the clipboard with a fallback for non-secure/iframe contexts where
- *  the async Clipboard API silently throws. Always reports success or failure. */
-async function copyToClipboard(text: string): Promise<boolean> {
-  try {
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-    throw new Error("clipboard API unavailable");
-  } catch {
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      return ok;
-    } catch {
-      return false;
-    }
-  }
-}
 
 function buildInviteText(member: { name: string; email: string; block: BreakGlassBlock; rank: "primary" | "backup"; accessToken?: string }, inviterName: string, childName: string) {
   const link = `${window.location.origin}/accept/${member.accessToken}`;
@@ -55,28 +29,6 @@ function buildInviteText(member: { name: string; email: string; block: BreakGlas
     `Thank you,\n${who}`;
   return { to: member.email, subject, body, link };
 }
-
-type EmailProvider = "gmail" | "outlook" | "yahoo" | "default";
-
-/** Builds a URL for each provider. Gmail/Outlook/Yahoo are real web pages that open
- *  in a new tab and pre-fill the compose form directly — they work regardless of
- *  what (if any) mail app is registered as the OS default, unlike mailto:. */
-function buildEmailUrl(provider: EmailProvider, t: { to: string; subject: string; body: string }): string {
-  const to = encodeURIComponent(t.to), su = encodeURIComponent(t.subject), bo = encodeURIComponent(t.body);
-  switch (provider) {
-    case "gmail":   return `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${su}&body=${bo}`;
-    case "outlook": return `https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${su}&body=${bo}`;
-    case "yahoo":   return `https://compose.mail.yahoo.com/?to=${to}&subject=${su}&body=${bo}`;
-    case "default": return `mailto:${t.to}?subject=${su}&body=${bo}`;
-  }
-}
-
-const EMAIL_PROVIDERS: { key: EmailProvider; label: string; opensNewTab: boolean }[] = [
-  { key: "gmail",   label: "Gmail",                opensNewTab: true },
-  { key: "outlook", label: "Outlook",               opensNewTab: true },
-  { key: "yahoo",   label: "Yahoo Mail",             opensNewTab: true },
-  { key: "default", label: "Default email app",      opensNewTab: false },
-];
 
 const INPUT = "w-full rounded-lg border border-border bg-surface-low px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
@@ -146,24 +98,17 @@ function MemberRow({
     if (!m?.accessToken) { toast.error("Could not prepare the invite link."); return; }
 
     const t = buildInviteText(m, inviterName, childName);
-    const url = buildEmailUrl(provider, t);
     const providerInfo = EMAIL_PROVIDERS.find(p => p.key === provider)!;
+    const { copied } = await sendViaProvider(provider, t, t.link);
 
-    if (providerInfo.opensNewTab) {
-      // Gmail/Outlook/Yahoo are real web pages — open reliably in a new tab, pre-filled.
-      window.open(url, "_blank", "noopener,noreferrer");
-      toast.success(`Opening ${providerInfo.label} with the invite ready to send…`);
-    } else {
-      // mailto: only works if a desktop mail app is registered as the OS default.
-      const copied = await copyToClipboard(t.link);
-      window.location.href = url;
-      toast.success(
-        copied
+    toast.success(
+      providerInfo.opensNewTab
+        ? `Opening ${providerInfo.label} with the invite ready to send…`
+        : copied
           ? "Opening your default email app… link also copied, in case it doesn't open."
           : "Opening your default email app…",
-        { duration: 4000 },
-      );
-    }
+      { duration: 4000 },
+    );
 
     if (m.status === "draft") {
       const ok = await dataService.markBreakGlassInviteSent(m.id);

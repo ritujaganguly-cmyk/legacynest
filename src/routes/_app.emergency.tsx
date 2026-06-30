@@ -523,8 +523,14 @@ function ActivationCoordinators() {
           <div>
             <h3 className="text-sm font-bold text-foreground">Auto-Activation Timer</h3>
             <p className="text-xs text-muted-foreground mt-1">
-              Once majority is reached, automatically activate without waiting for manual admin review.
-              Leave off to require admin approval (recommended for first setup).
+              Controls only whether the <strong>emergency plan itself</strong> turns Active automatically once
+              coordinators reach majority, or waits for LegacyNest admin approval (recommended for first setup).
+            </p>
+            <p className="text-xs text-muted-foreground mt-1.5 rounded-lg bg-surface-low border border-border px-3 py-2">
+              This does <strong>not</strong> control what information is shared. Once Active — either way —
+              <strong> Daily Care</strong> break-glass info follows its own release setting (timer or manual,
+              set above), and <strong>Medical, Financial, and Legal</strong> are always reviewed and released by
+              LegacyNest admin, within 3 working days.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -551,8 +557,9 @@ function ActivationCoordinators() {
           {autoTrigger !== null && (
             <p className="text-xs text-warning font-medium">
               ⚡ Once {majorityNeeded(total)} of {total} coordinators confirm, the plan activates automatically after{" "}
-              {autoTrigger === 0.083 ? "5 minutes" : autoTrigger === 1 ? "1 hour" : `${autoTrigger} hours`}.
-              No admin review required.
+              {autoTrigger === 0.083 ? "5 minutes" : autoTrigger === 1 ? "1 hour" : `${autoTrigger} hours`} —
+              no admin review needed to turn the plan Active. Sharing break-glass information is still governed
+              separately by each block's release setting above.
             </p>
           )}
         </div>

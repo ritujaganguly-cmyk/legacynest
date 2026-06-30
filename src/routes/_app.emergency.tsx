@@ -129,10 +129,10 @@ function EmergencyPage() {
       </div>
 
       {/* Activation banner — always at top, prominent */}
-      <div className={`rounded-2xl border-2 p-5 flex items-center justify-between gap-4 ${isActive ? "bg-red-50 border-red-400" : "bg-red-50 border-red-200"}`}>
-        <div className="flex items-center gap-3">
+      <div className={`rounded-2xl border-2 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${isActive ? "bg-red-50 border-red-400" : "bg-red-50 border-red-200"}`}>
+        <div className="flex items-center gap-3 min-w-0">
           <span className={`h-4 w-4 rounded-full shrink-0 ${isActive ? "bg-red-500 animate-pulse" : "bg-red-300"}`} />
-          <div>
+          <div className="min-w-0">
             <div className={`font-bold text-lg ${isActive ? "text-red-700" : "text-red-800"}`}>
               {isActive ? "🔴 EMERGENCY PLAN ACTIVE" : "Activate Emergency Plan"}
             </div>
@@ -147,12 +147,12 @@ function EmergencyPage() {
           onClick={toggleActivation}
           disabled={!isActive && !plan?.coordinatorName}
           title={!plan?.coordinatorName && !isActive ? "Set Emergency Coordinator before activating" : undefined}
-          className={`shrink-0 rounded-lg px-5 py-2.5 text-sm font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+          className={`shrink-0 w-full sm:w-auto rounded-lg px-4 py-2.5 text-sm font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
             isActive
               ? "border-2 border-red-300 text-red-700 hover:bg-red-100"
               : "bg-red-600 text-white hover:bg-red-700 shadow-md"
           }`}>
-          {isActive ? "Stand Down" : "🚨 Activate Emergency"}
+          {isActive ? "Stand Down" : <>🚨 <span className="sm:hidden">Activate</span><span className="hidden sm:inline">Activate Emergency</span></>}
         </button>
       </div>
 

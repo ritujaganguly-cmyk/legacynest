@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Heart, HeartPulse, Landmark, Scale, Send, Copy, Trash2, Check, Clock, X, Loader2, KeyRound } from "lucide-react";
+import { Heart, HeartPulse, Landmark, Scale, Send, Copy, Trash2, Check, Clock, X, Loader2, KeyRound, FileText } from "lucide-react";
 import { toast } from "sonner";
-import { dataService, type BreakGlassBlock, type BreakGlassMember } from "@/lib/data/mock";
+import { dataService, type BreakGlassBlock, type BreakGlassMember, type VaultDocument } from "@/lib/data/mock";
 
-const BLOCKS: { key: BreakGlassBlock; label: string; icon: typeof Heart; hint: string }[] = [
-  { key: "daily_care", label: "Daily Care", icon: Heart,      hint: "Routine, comfort items, how they communicate, what calms them, what to avoid." },
-  { key: "medical",    label: "Medical",    icon: HeartPulse, hint: "Conditions, medications & doses, allergies, treating doctors." },
-  { key: "financial",  label: "Financial",  icon: Landmark,   hint: "Where funds are, who to contact, immediate money needs." },
-  { key: "legal",      label: "Legal",      icon: Scale,      hint: "Guardianship status, where key documents are, who has authority." },
+const BLOCKS: { key: BreakGlassBlock; label: string; icon: typeof Heart; hint: string; categories: VaultDocument["category"][] }[] = [
+  { key: "daily_care", label: "Daily Care", icon: Heart,      hint: "Routine, comfort items, how they communicate, what calms them, what to avoid.", categories: ["Identity", "Disability", "Educational", "Government"] },
+  { key: "medical",    label: "Medical",    icon: HeartPulse, hint: "Conditions, medications & doses, allergies, treating doctors.",               categories: ["Medical", "Disability"] },
+  { key: "financial",  label: "Financial",  icon: Landmark,   hint: "Where funds are, who to contact, immediate money needs.",                     categories: ["Financial", "Insurance"] },
+  { key: "legal",      label: "Legal",      icon: Scale,      hint: "Guardianship status, where key documents are, who has authority.",            categories: ["Legal", "Government", "Identity"] },
 ];
 
 const INPUT = "w-full rounded-lg border border-border bg-surface-low px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
@@ -121,6 +121,9 @@ export function BreakGlassBlocks() {
   const { data: child } = useQuery({ queryKey: ["child-profile"], queryFn: () => dataService.getChildProfile() });
   const { data: parent } = useQuery({ queryKey: ["parent-profile"], queryFn: () => dataService.getParentProfile() });
 
+  const { data: vaultDocs = [] } = useQuery({ queryKey: ["vault"], queryFn: () => dataService.listVaultDocuments() });
+  const { data: bgFiles = {} as Record<BreakGlassBlock, string[]> } = useQuery({ queryKey: ["bg-files"], queryFn: () => dataService.getBreakGlassFiles() });
+
   const [text, setText] = useState<Record<string, string>>({});
   useEffect(() => { setText(blocks as Record<string, string>); }, [blocks]);
 
@@ -135,6 +138,15 @@ export function BreakGlassBlocks() {
     qc.invalidateQueries({ queryKey: ["bg-blocks"] });
   }
 
+  async function toggleFile(block: BreakGlassBlock, docId: string) {
+    const current = (bgFiles as Record<BreakGlassBlock, string[]>)[block] ?? [];
+    const next = current.includes(docId) ? current.filter(id => id !== docId) : [...current, docId];
+    const nextFiles = { ...(bgFiles as Record<BreakGlassBlock, string[]>), [block]: next };
+    qc.setQueryData(["bg-files"], nextFiles); // optimistic
+    const ok = await dataService.saveBreakGlassFiles(nextFiles);
+    if (!ok) { toast.error("Could not update document sharing."); qc.invalidateQueries({ queryKey: ["bg-files"] }); }
+  }
+
   return (
     <section className="space-y-4">
       <div className="flex items-start gap-3">
@@ -144,32 +156,75 @@ export function BreakGlassBlocks() {
         <div>
           <h2 className="text-lg font-bold text-foreground">Break-glass information</h2>
           <p className="text-sm text-muted-foreground">
-            The four things a trusted person needs in the first hours. For each, name a primary and a backup caregiver and invite them.
+            The four things a trusted person needs in the first hours. For each: write the summary, name a primary and a backup caregiver, and choose which Digital Vault documents to share.
           </p>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">
-        {BLOCKS.map(({ key, label, icon: Icon, hint }) => (
-          <div key={key} className="rounded-2xl border border-border bg-surface-low p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Icon className="h-5 w-5 text-primary shrink-0" />
-              <h3 className="font-semibold text-foreground">{label}</h3>
+        {BLOCKS.map(({ key, label, icon: Icon, hint, categories }) => {
+          const blockDocs = vaultDocs.filter(d => categories.includes(d.category));
+          const sharedIds = (bgFiles as Record<BreakGlassBlock, string[]>)[key] ?? [];
+          return (
+            <div key={key} className="rounded-2xl border border-border bg-surface-low p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Icon className="h-5 w-5 text-primary shrink-0" />
+                <h3 className="font-semibold text-foreground">{label}</h3>
+              </div>
+              <textarea
+                rows={3}
+                className={`${INPUT} resize-none bg-card`}
+                placeholder={hint}
+                value={text[key] ?? ""}
+                onChange={e => setText(t => ({ ...t, [key]: e.target.value }))}
+                onBlur={() => saveBlockText(key)}
+              />
+              <div className="space-y-2">
+                <MemberRow block={key} rank="primary" member={members.find(m => m.block === key && m.rank === "primary")} childName={childName} inviterName={inviterName} onChanged={refetchMembers} />
+                <MemberRow block={key} rank="backup" member={members.find(m => m.block === key && m.rank === "backup")} childName={childName} inviterName={inviterName} onChanged={refetchMembers} />
+              </div>
+
+              {/* Vault documents shared with this block's caregivers */}
+              <div className="rounded-lg border border-border bg-card p-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Vault documents to share {sharedIds.length > 0 && `(${sharedIds.length} on)`}
+                  </span>
+                </div>
+                {blockDocs.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    No matching {label.toLowerCase()} documents in your Digital Vault yet.
+                  </p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {blockDocs.map(doc => {
+                      const on = sharedIds.includes(doc.id);
+                      return (
+                        <li key={doc.id} className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="text-sm text-foreground truncate">{doc.name}</div>
+                            <div className="text-[10px] text-muted-foreground">{doc.category}</div>
+                          </div>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={on}
+                            onClick={() => toggleFile(key, doc.id)}
+                            title={on ? "Sharing on — click to disable" : "Sharing off — click to enable"}
+                            className={`relative h-5 w-9 rounded-full shrink-0 transition-colors ${on ? "bg-primary" : "bg-surface-container"}`}
+                          >
+                            <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${on ? "translate-x-4" : "translate-x-0.5"}`} />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
             </div>
-            <textarea
-              rows={3}
-              className={`${INPUT} resize-none bg-card`}
-              placeholder={hint}
-              value={text[key] ?? ""}
-              onChange={e => setText(t => ({ ...t, [key]: e.target.value }))}
-              onBlur={() => saveBlockText(key)}
-            />
-            <div className="space-y-2">
-              <MemberRow block={key} rank="primary" member={members.find(m => m.block === key && m.rank === "primary")} childName={childName} inviterName={inviterName} onChanged={refetchMembers} />
-              <MemberRow block={key} rank="backup" member={members.find(m => m.block === key && m.rank === "backup")} childName={childName} inviterName={inviterName} onChanged={refetchMembers} />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

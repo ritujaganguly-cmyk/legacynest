@@ -33,229 +33,6 @@ const DEFAULT_INSTITUTIONS = [
   "Insurance Provider",
 ];
 
-// ── Simulation ──────────────────────────────────────────────────────────────
-
-type SimPath = "parent" | "coordinator";
-type StepStatus = "pending" | "running" | "done" | "skipped";
-
-type SimStep = {
-  id: string;
-  label: string;
-  description: string;
-  action: string; // button label
-  who: string;    // who does it
-};
-
-const PARENT_STEPS: SimStep[] = [
-  { id: "confirm",    label: "Confirm Emergency",           description: "Mark the emergency as active. This starts the clock.", action: "Confirm & Start", who: "Parent / Device" },
-  { id: "coord",      label: "Notify Emergency Coordinator", description: "Send an alert (email + SMS) to your named coordinator with the child's emergency brief.", action: "Send Alert", who: "System → Coordinator" },
-  { id: "backup",     label: "Notify Backup Coordinator",   description: "Alert the backup coordinator so they are aware and on standby.", action: "Send Alert", who: "System → Backup" },
-  { id: "brief",      label: "Share Emergency Brief",       description: "Send the child's full emergency brief (medications, blood group, contacts, tonight's residence) to the coordinator.", action: "Share Brief", who: "System → Coordinator" },
-  { id: "carecircle", label: "Alert Care Circle",           description: "Notify all active care circle members that the emergency plan is now live.", action: "Notify All", who: "System → Care Circle" },
-  { id: "institutions", label: "Notify Institutions",       description: "Mark key institutions (school, bank, insurance, National Trust LLC) as notified.", action: "Mark Notified", who: "Parent / Coordinator" },
-  { id: "vault",      label: "Grant Break-Glass Vault Access", description: "Share the vault access link so the coordinator can retrieve critical documents.", action: "Share Access", who: "System → Coordinator" },
-];
-
-const COORD_STEPS: SimStep[] = [
-  { id: "alert",      label: "Coordinator Submits Alert",   description: "The emergency coordinator submits an activation request via the coordinator portal link they received.", action: "Submit Alert", who: "Emergency Coordinator" },
-  { id: "second",     label: "Second Coordinator Confirms", description: "A second coordinator confirms via their portal. Majority confirmation is required for activation.", action: "Confirm (2nd)", who: "Backup Coordinator" },
-  { id: "legacynest", label: "LegacyNest Reviews & Calls",  description: "LegacyNest admin is alerted. They call the emergency coordinator to verify and get a verbal confirmation.", action: "Mark Called", who: "LegacyNest Admin" },
-  { id: "activate",   label: "Emergency Activated",         description: "LegacyNest approves the activation. The emergency plan status changes to Active.", action: "Activate", who: "LegacyNest Admin" },
-  { id: "carecircle", label: "Care Circle Notified",        description: "All care circle members receive an alert that the emergency plan is live.", action: "Notify All", who: "System → Care Circle" },
-  { id: "brief",      label: "Emergency Brief Shared",      description: "The child's full emergency brief and vault access are shared with all stakeholders.", action: "Share All", who: "System → All" },
-];
-
-const SIM_KEY = (userId: string, path: SimPath) => `legacynest.simulation.${path}.${userId}.v1`;
-
-type SimState = { steps: Record<string, StepStatus>; startedAt: string; completedAt?: string };
-
-function SimulationPanel({
-  path, plan, brief, institutions, careCircle, userId, onComplete, onClose,
-}: {
-  path: SimPath;
-  plan: EmergencyPlan | null | undefined;
-  brief: EmergencyBrief | null | undefined;
-  institutions: EmergencyInstitution[];
-  careCircle: { name: string }[];
-  userId: string;
-  onComplete: () => void;
-  onClose: () => void;
-}) {
-  const steps = path === "parent" ? PARENT_STEPS : COORD_STEPS;
-  const storageKey = SIM_KEY(userId, path);
-
-  const [state, setState] = useState<SimState>(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) return JSON.parse(raw) as SimState;
-    } catch { /* ignore */ }
-    const initial: SimState = {
-      steps: Object.fromEntries(steps.map(s => [s.id, "pending" as StepStatus])),
-      startedAt: new Date().toISOString(),
-    };
-    localStorage.setItem(storageKey, JSON.stringify(initial));
-    return initial;
-  });
-
-  const save = (next: SimState) => {
-    setState(next);
-    localStorage.setItem(storageKey, JSON.stringify(next));
-  };
-
-  const doneCount = steps.filter(s => state.steps[s.id] === "done").length;
-  const allDone = doneCount === steps.length;
-
-  async function execute(stepId: string) {
-    save({ ...state, steps: { ...state.steps, [stepId]: "running" } });
-
-    // Real actions per step
-    try {
-      if (stepId === "confirm" || stepId === "activate") {
-        await dataService.saveEmergencyPlan({ activationStatus: "Active", activatedAt: new Date().toISOString() });
-        toast.success("Emergency plan marked Active in database.");
-      } else if (stepId === "institutions") {
-        for (const inst of institutions.filter(i => !i.isNotified)) {
-          await dataService.toggleEmergencyInstitution(inst.id, true);
-        }
-        toast.success(`${institutions.length} institutions marked as notified.`);
-      } else if (stepId === "alert" || stepId === "second") {
-        // Coordinator action — simulated
-        toast.success(`Coordinator action recorded. In production this triggers the portal email.`);
-      } else if (stepId === "coord" || stepId === "backup" || stepId === "brief" || stepId === "vault" || stepId === "brief" || stepId === "legacynest") {
-        toast.success(`Action completed. In production an email + SMS is sent to ${
-          stepId === "coord" ? plan?.coordinatorName || "coordinator" :
-          stepId === "backup" ? plan?.backupCoordinatorName || "backup" :
-          stepId === "legacynest" ? "LegacyNest admin" : "all stakeholders"
-        }.`);
-      } else if (stepId === "carecircle") {
-        toast.success(`${careCircle.length} care circle members notified.`);
-      }
-      await new Promise(r => setTimeout(r, 600)); // brief pause for UX
-    } catch {
-      toast.error("Action failed — check your emergency plan data.");
-    }
-
-    const nextState: SimState = {
-      ...state,
-      steps: { ...state.steps, [stepId]: "done" },
-    };
-    const nowAllDone = steps.every(s => nextState.steps[s.id] === "done");
-    if (nowAllDone) {
-      nextState.completedAt = new Date().toISOString();
-      onComplete();
-    }
-    save(nextState);
-  }
-
-  const statusColor = (s: StepStatus) =>
-    s === "done"    ? "border-green-400 bg-green-50" :
-    s === "running" ? "border-primary bg-primary/5" :
-                      "border-border bg-card";
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-background rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
-        {/* Header */}
-        <div className={`px-6 py-5 rounded-t-2xl border-b border-border ${path === "parent" ? "bg-red-50" : "bg-amber-50"}`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className={`text-xs font-bold uppercase tracking-widest mb-1 ${path === "parent" ? "text-red-600" : "text-amber-600"}`}>
-                {path === "parent" ? "🔴 Parent-Initiated Emergency" : "🟡 Coordinator-Initiated Emergency"}
-              </div>
-              <h2 className="text-lg font-bold text-foreground">Emergency Simulation</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {allDone ? "All steps complete — Emergency Process Initiated ✓" : `Step ${doneCount + 1} of ${steps.length}`}
-              </p>
-            </div>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-black/10 transition-colors">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          {/* Progress bar */}
-          <div className="mt-3 h-2 rounded-full bg-black/10 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${path === "parent" ? "bg-red-500" : "bg-amber-500"}`}
-              style={{ width: `${(doneCount / steps.length) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Steps */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-          {allDone ? (
-            <div className="py-8 text-center space-y-3">
-              <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="h-9 w-9 text-green-600" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground">Emergency Process Initiated</h3>
-              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                All {steps.length} steps completed. The emergency plan is now active and all stakeholders have been notified.
-              </p>
-              {state.completedAt && (
-                <p className="text-xs text-muted-foreground">
-                  Completed: {new Date(state.completedAt).toLocaleString("en-IN")}
-                </p>
-              )}
-              <button
-                onClick={() => {
-                  localStorage.removeItem(storageKey);
-                  onClose();
-                }}
-                className="mt-2 inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground font-semibold px-6 py-2.5 hover:bg-primary/90"
-              >
-                Close & Reset Simulation
-              </button>
-            </div>
-          ) : (
-            steps.map((step, i) => {
-              const status = state.steps[step.id] ?? "pending";
-              const isDone = status === "done";
-              const isRunning = status === "running";
-              const prevDone = i === 0 || state.steps[steps[i - 1].id] === "done";
-              const canRun = prevDone && !isDone && !isRunning;
-
-              return (
-                <div key={step.id} className={`rounded-xl border p-4 transition-all ${statusColor(status)}`}>
-                  <div className="flex items-start gap-3">
-                    <div className={`h-7 w-7 rounded-full shrink-0 flex items-center justify-center text-xs font-bold mt-0.5 ${
-                      isDone ? "bg-green-500 text-white" :
-                      isRunning ? "bg-primary text-white animate-pulse" :
-                      "bg-surface-container text-muted-foreground"
-                    }`}>
-                      {isDone ? <Check className="h-4 w-4" /> : isRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : i + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div>
-                          <div className={`text-sm font-semibold ${isDone ? "text-green-800" : "text-foreground"}`}>{step.label}</div>
-                          <div className="text-xs text-muted-foreground mt-0.5">{step.description}</div>
-                          <div className="text-[10px] text-muted-foreground/70 mt-1 font-medium uppercase tracking-wide">{step.who}</div>
-                        </div>
-                        {canRun && (
-                          <button
-                            onClick={() => execute(step.id)}
-                            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground font-semibold px-3 py-1.5 text-xs hover:bg-primary/90 transition-colors"
-                          >
-                            <PlayCircle className="h-3.5 w-3.5" /> {step.action}
-                          </button>
-                        )}
-                        {isDone && <span className="text-xs font-semibold text-green-700 shrink-0">✓ Done</span>}
-                        {isRunning && <span className="text-xs font-semibold text-primary shrink-0">Running…</span>}
-                        {!canRun && !isDone && !isRunning && (
-                          <span className="text-xs text-muted-foreground/50 shrink-0">Waiting…</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function EmergencyPage() {
   const qc = useQueryClient();
@@ -267,9 +44,6 @@ function EmergencyPage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [coordEdit, setCoordEdit] = useState(false);
-  const [simOpen, setSimOpen] = useState(false);
-  const [simPath, setSimPath] = useState<SimPath | null>(null);
-  const [simPathPicker, setSimPathPicker] = useState(false);
   const [userId, setUserId] = useState("");
 
   useEffect(() => {
@@ -380,14 +154,6 @@ function EmergencyPage() {
             {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Download Card
           </button>
-          <button
-            onClick={() => setSimPathPicker(true)}
-            disabled={!plan?.coordinatorName}
-            title={!plan?.coordinatorName ? "Set Emergency Coordinator first to run simulation" : undefined}
-            className="inline-flex items-center gap-2 rounded-lg bg-amber-600 text-white font-semibold px-4 py-2.5 text-sm hover:bg-amber-700 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            ⚡ Run Simulation
-          </button>
         </div>
       </div>
 
@@ -401,8 +167,8 @@ function EmergencyPage() {
             </div>
             <div className="text-xs text-red-600/80">
               {isActive && plan?.activatedAt
-                ? `Activated ${new Date(plan.activatedAt).toLocaleString("en-IN")} — all coordinators have been notified`
-                : "Press only in a real emergency — this notifies your coordinator and activates all protocols"}
+                ? `Activated ${new Date(plan.activatedAt).toLocaleString("en-IN")} — coordinators can now see the plan as live`
+                : "Press only in a real emergency — this marks the plan live for your coordinators"}
             </div>
           </div>
         </div>
@@ -646,79 +412,6 @@ function EmergencyPage() {
       <div className="rounded-2xl border border-border bg-card p-6">
         <ActivationCoordinators />
       </div>
-
-      {/* ── Path Picker Dialog ── */}
-      {simPathPicker && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-background rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div className="px-6 py-5 border-b border-border flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold">Emergency Simulation</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Choose how the emergency is triggered</p>
-              </div>
-              <button onClick={() => setSimPathPicker(false)} className="p-2 rounded-lg hover:bg-surface-low">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-800 leading-relaxed">
-                <strong>Simulation only</strong> — Steps are real database actions (status updates, notifications) but no actual emergency is raised. Use this to test and rehearse your plan with your family.
-              </div>
-
-              <button
-                onClick={() => { setSimPath("parent"); setSimPathPicker(false); setSimOpen(true); }}
-                className="w-full rounded-xl border-2 border-red-200 bg-red-50 hover:border-red-400 p-4 text-left transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
-                    <Shield className="h-5 w-5 text-red-600" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-red-800">Parent-Initiated</div>
-                    <div className="text-xs text-red-700/80 mt-0.5">
-                      You (the parent) are triggering the emergency. 7 steps: notify coordinator, share brief, alert care circle, notify institutions, grant vault access.
-                    </div>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => { setSimPath("coordinator"); setSimPathPicker(false); setSimOpen(true); }}
-                className="w-full rounded-xl border-2 border-amber-200 bg-amber-50 hover:border-amber-400 p-4 text-left transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-                    <Users className="h-5 w-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-amber-800">Coordinator-Initiated</div>
-                    <div className="text-xs text-amber-700/80 mt-0.5">
-                      Coordinators cannot reach the parent and trigger the process. 6 steps: alert submission, majority confirmation, LegacyNest calls coordinator, activation, care circle notified.
-                    </div>
-                  </div>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Simulation Panel ── */}
-      {simOpen && simPath && userId && (
-        <SimulationPanel
-          path={simPath}
-          plan={plan}
-          brief={brief}
-          institutions={institutions}
-          careCircle={careCircle}
-          userId={userId}
-          onComplete={() => {
-            qc.invalidateQueries({ queryKey: ["emergency-plan"] });
-            toast.success("Simulation complete — Emergency Process Initiated.", { duration: 5000 });
-          }}
-          onClose={() => { setSimOpen(false); setSimPath(null); }}
-        />
-      )}
     </div>
   );
 }

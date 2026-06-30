@@ -964,6 +964,24 @@ export const dataService = {
       return true;
     }, false);
   },
+  async getBreakGlassFiles(): Promise<Record<BreakGlassBlock, string[]>> {
+    return safe(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return {} as Record<BreakGlassBlock, string[]>;
+      const { data } = await pdb.from("emergency_plan").select("break_glass_files").eq("user_id", user.id).maybeSingle();
+      return ((data as { break_glass_files?: Record<BreakGlassBlock, string[]> } | null)?.break_glass_files ?? {}) as Record<BreakGlassBlock, string[]>;
+    }, {} as Record<BreakGlassBlock, string[]>);
+  },
+  async saveBreakGlassFiles(files: Record<BreakGlassBlock, string[]>): Promise<boolean> {
+    return safe(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("not authenticated");
+      const { error } = await pdb.from("emergency_plan")
+        .upsert({ user_id: user.id, break_glass_files: files, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      if (error) throw error;
+      return true;
+    }, false);
+  },
   async listBreakGlassMembers(): Promise<BreakGlassMember[]> {
     return safe(async () => {
       const { data: { user } } = await supabase.auth.getUser();

@@ -110,7 +110,23 @@ function MemberRow({
     const m = await ensureSaved();
     setBusy(false);
     if (!m?.accessToken) { toast.error("Could not prepare the invite link."); return; }
-    window.open(buildInviteMailto(m, inviterName, childName), "_blank");
+
+    // Copy the link first as a safety net — if the device has no mail app wired up,
+    // the mailto trigger below silently does nothing visible, but the link is ready to paste.
+    const link = `${window.location.origin}/accept/${m.accessToken}`;
+    const copied = await copyToClipboard(link);
+
+    // window.location.href is the reliable way to trigger mailto: — window.open(_blank)
+    // leaves a blank tab behind when no desktop mail client is registered.
+    window.location.href = buildInviteMailto(m, inviterName, childName);
+
+    toast.success(
+      copied
+        ? "Opening your email app… link also copied, in case it doesn't open."
+        : "Opening your email app…",
+      { duration: 4000 },
+    );
+
     if (m.status === "draft") {
       const ok = await dataService.markBreakGlassInviteSent(m.id);
       if (ok) onChanged();

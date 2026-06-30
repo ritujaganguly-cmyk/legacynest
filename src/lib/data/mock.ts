@@ -22,6 +22,8 @@ export type VaultDocument = {
 };
 
 export type BreakGlassBlock = "daily_care" | "medical" | "financial" | "legal";
+export type BreakGlassReleaseMode = "timer" | "manual";
+export type BreakGlassReleaseConfig = { mode: BreakGlassReleaseMode; timerHours?: number };
 export type BreakGlassMember = {
   id: string;
   block: BreakGlassBlock;
@@ -978,6 +980,60 @@ export const dataService = {
       if (!user) throw new Error("not authenticated");
       const { error } = await pdb.from("emergency_plan")
         .upsert({ user_id: user.id, break_glass_files: files, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      if (error) throw error;
+      return true;
+    }, false);
+  },
+  // Release policy: only daily_care may be "timer"; all other blocks are forced
+  // to "manual" server-side regardless of what's stored here (see migration 055).
+  async getBreakGlassRelease(): Promise<Partial<Record<BreakGlassBlock, BreakGlassReleaseConfig>>> {
+    return safe(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return {};
+      const { data } = await pdb.from("emergency_plan").select("break_glass_release").eq("user_id", user.id).maybeSingle();
+      return ((data as { break_glass_release?: Partial<Record<BreakGlassBlock, BreakGlassReleaseConfig>> } | null)?.break_glass_release ?? {});
+    }, {});
+  },
+  async saveBreakGlassRelease(config: Partial<Record<BreakGlassBlock, BreakGlassReleaseConfig>>): Promise<boolean> {
+    return safe(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("not authenticated");
+      const { error } = await pdb.from("emergency_plan")
+        .upsert({ user_id: user.id, break_glass_release: config, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      if (error) throw error;
+      return true;
+    }, false);
+  },
+  async getBreakGlassReleased(): Promise<Partial<Record<BreakGlassBlock, string>>> {
+    return safe(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return {};
+      const { data } = await pdb.from("emergency_plan").select("break_glass_released").eq("user_id", user.id).maybeSingle();
+      return ((data as { break_glass_released?: Partial<Record<BreakGlassBlock, string>> } | null)?.break_glass_released ?? {});
+    }, {});
+  },
+  // Owner's manual "release now" action for manual-review blocks while the emergency is active.
+  async releaseBreakGlassNow(block: BreakGlassBlock): Promise<boolean> {
+    return safe(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("not authenticated");
+      const { data } = await pdb.from("emergency_plan").select("break_glass_released").eq("user_id", user.id).maybeSingle();
+      const current = ((data as { break_glass_released?: Partial<Record<BreakGlassBlock, string>> } | null)?.break_glass_released ?? {});
+      const next = { ...current, [block]: new Date().toISOString() };
+      const { error } = await pdb.from("emergency_plan")
+        .upsert({ user_id: user.id, break_glass_released: next, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      if (error) throw error;
+      return true;
+    }, false);
+  },
+  // Clears manual-release markers — called when standing an emergency down, so a
+  // future re-activation requires a fresh review rather than reusing stale releases.
+  async resetBreakGlassReleased(): Promise<boolean> {
+    return safe(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("not authenticated");
+      const { error } = await pdb.from("emergency_plan")
+        .upsert({ user_id: user.id, break_glass_released: {}, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
       if (error) throw error;
       return true;
     }, false);

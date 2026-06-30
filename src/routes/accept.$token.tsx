@@ -28,6 +28,9 @@ type Invite = {
   child_name: string | null;
   block_text: string | null;
   is_active: boolean;
+  release_mode: "timer" | "manual";
+  is_released: boolean;
+  unlocks_at: string | null;
   shared_files: SharedFile[] | null;
 };
 
@@ -119,30 +122,42 @@ function AcceptInvite() {
               </p>
             </div>
 
-            {/* Active / standby status */}
-            {invite.is_active ? (
-              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 flex items-start gap-2.5">
-                <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-                <p className="text-sm text-red-800"><strong>Emergency is active.</strong> Documents below are available now.</p>
-              </div>
-            ) : (
+            {/* Status: not active / pending review / released */}
+            {!invite.is_active ? (
               <div className="rounded-xl bg-surface-low border border-border px-4 py-3 flex items-start gap-2.5">
                 <Lock className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                <p className="text-sm text-muted-foreground">No emergency is active right now. Documents below will unlock automatically if one is declared.</p>
+                <p className="text-sm text-muted-foreground">No emergency is active right now. This information will be shared if one is declared.</p>
+              </div>
+            ) : invite.is_released ? (
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 flex items-start gap-2.5">
+                <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                <p className="text-sm text-red-800"><strong>Emergency is active.</strong> The information below is available now.</p>
+              </div>
+            ) : (
+              <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-start gap-2.5">
+                <Lock className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-800">
+                  <strong>Emergency is active.</strong>{" "}
+                  {invite.release_mode === "timer"
+                    ? `This unlocks automatically${invite.unlocks_at ? ` at ${new Date(invite.unlocks_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}` : ""}.`
+                    : `This is being reviewed and will be shared${invite.unlocks_at ? ` by ${new Date(invite.unlocks_at).toLocaleDateString("en-IN", { day: "numeric", month: "long" })}` : " soon"}.`}
+                </p>
               </div>
             )}
 
-            {/* Break-glass info text */}
+            {/* Break-glass info text — held back until released */}
             <div>
               <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">{meta.label} summary</div>
-              {invite.block_text ? (
+              {!invite.is_released ? (
+                <p className="text-sm text-muted-foreground italic">Locked until released.</p>
+              ) : invite.block_text ? (
                 <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap rounded-xl bg-surface-low border border-border p-4">{invite.block_text}</p>
               ) : (
                 <p className="text-sm text-muted-foreground italic">{invite.inviter_name} hasn't written this yet.</p>
               )}
             </div>
 
-            {/* Shared documents */}
+            {/* Shared documents — held back until released */}
             <div>
               <div className="flex items-center gap-1.5 mb-1.5">
                 <FileText className="h-3.5 w-3.5 text-muted-foreground" />
@@ -158,7 +173,7 @@ function AcceptInvite() {
                         <div className="text-sm font-medium text-foreground truncate">{f.name}</div>
                         <div className="text-[10px] text-muted-foreground">{f.category}</div>
                       </div>
-                      {invite.is_active ? (
+                      {invite.is_released ? (
                         <button
                           onClick={() => viewDocument(f.id)}
                           disabled={openingDoc === f.id}

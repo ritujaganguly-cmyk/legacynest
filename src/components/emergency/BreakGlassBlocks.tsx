@@ -1,9 +1,17 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Heart, HeartPulse, Landmark, Scale, Mail, Copy, Trash2, Check, Clock, X, Loader2, KeyRound, FileText, ChevronDown, ExternalLink, Smartphone } from "lucide-react";
+import { Heart, HeartPulse, Landmark, Scale, Mail, Copy, Trash2, Check, Clock, X, Loader2, KeyRound, FileText, ChevronDown, ExternalLink, Smartphone, Timer, Unlock, Info } from "lucide-react";
 import { toast } from "sonner";
-import { dataService, type BreakGlassBlock, type BreakGlassMember, type VaultDocument } from "@/lib/data/mock";
+import { dataService, type BreakGlassBlock, type BreakGlassMember, type VaultDocument, type BreakGlassReleaseConfig } from "@/lib/data/mock";
 import { EMAIL_PROVIDERS, type EmailProvider, sendViaProvider, copyToClipboard } from "@/lib/email-providers";
+import { addWorkingDays } from "@/lib/working-days";
+
+const TIMER_OPTIONS = [
+  { label: "5 minutes", hours: 0.083 },
+  { label: "1 hour", hours: 1 },
+  { label: "12 hours", hours: 12 },
+  { label: "24 hours", hours: 24 },
+];
 
 const BLOCKS: { key: BreakGlassBlock; label: string; icon: typeof Heart; hint: string; categories: VaultDocument["category"][] }[] = [
   { key: "daily_care", label: "Daily Care", icon: Heart,      hint: "Routine, comfort items, how they communicate, what calms them, what to avoid.", categories: ["Identity", "Disability", "Educational", "Government"] },
@@ -181,6 +189,114 @@ function MemberRow({
   );
 }
 
+function ReleasePolicy({
+  block, isActive, activatedAt, allConfig, config, releasedAt, onConfigChanged, onReleased,
+}: {
+  block: BreakGlassBlock; isActive: boolean; activatedAt: string | null | undefined;
+  allConfig: Partial<Record<BreakGlassBlock, BreakGlassReleaseConfig>>;
+  config?: BreakGlassReleaseConfig; releasedAt?: string;
+  onConfigChanged: () => void; onReleased: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const isDailyCare = block === "daily_care";
+  // Non-daily_care blocks are always manual, regardless of any stale stored config.
+  const mode = isDailyCare ? (config?.mode ?? "manual") : "manual";
+  const timerHours = config?.timerHours ?? 1;
+
+  async function saveConfig(next: BreakGlassReleaseConfig) {
+    setBusy(true);
+    const ok = await dataService.saveBreakGlassRelease({ ...allConfig, [block]: next });
+    setBusy(false);
+    if (ok) onConfigChanged(); else toast.error("Could not update release setting.");
+  }
+
+  async function setMode(next: "timer" | "manual") {
+    await saveConfig({ mode: next, timerHours });
+  }
+
+  async function setTimerHours(hours: number) {
+    await saveConfig({ mode: "timer", timerHours: hours });
+  }
+
+  async function releaseNow() {
+    setBusy(true);
+    const ok = await dataService.releaseBreakGlassNow(block);
+    setBusy(false);
+    if (ok) { toast.success("Released — caregivers can now see this information."); onReleased(); }
+    else toast.error("Could not release.");
+  }
+
+  // Live status, while an emergency is active
+  let status: ReactNode = null;
+  if (isActive && activatedAt) {
+    if (mode === "timer") {
+      const unlocksAt = new Date(new Date(activatedAt).getTime() + timerHours * 3600_000);
+      const released = new Date() >= unlocksAt;
+      status = released
+        ? <span className="text-xs font-semibold text-green-700 flex items-center gap-1"><Unlock className="h-3 w-3" /> Released to caregivers</span>
+        : <span className="text-xs text-amber-700">Auto-releases at {unlocksAt.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</span>;
+    } else if (releasedAt) {
+      status = <span className="text-xs font-semibold text-green-700 flex items-center gap-1"><Unlock className="h-3 w-3" /> Released {new Date(releasedAt).toLocaleDateString("en-IN")}</span>;
+    } else {
+      const dueBy = addWorkingDays(new Date(activatedAt), 3);
+      status = (
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <span className="text-xs text-amber-700">Pending review — due by {dueBy.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+          <button onClick={releaseNow} disabled={busy}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline disabled:opacity-50">
+            {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Unlock className="h-3 w-3" />} Release now
+          </button>
+        </div>
+      );
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+      <div className="flex items-center gap-1.5">
+        <Timer className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Release policy</span>
+      </div>
+
+      {isDailyCare ? (
+        <>
+          <div className="flex gap-2">
+            <button onClick={() => setMode("timer")} disabled={busy}
+              className={`flex-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-colors ${mode === "timer" ? "bg-primary text-primary-foreground border-primary" : "bg-surface-low text-foreground border-border hover:border-primary/40"}`}>
+              Auto-release on timer
+            </button>
+            <button onClick={() => setMode("manual")} disabled={busy}
+              className={`flex-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-colors ${mode === "manual" ? "bg-primary text-primary-foreground border-primary" : "bg-surface-low text-foreground border-border hover:border-primary/40"}`}>
+              Manual review
+            </button>
+          </div>
+          {mode === "timer" && (
+            <div className="flex flex-wrap gap-1.5">
+              {TIMER_OPTIONS.map(o => (
+                <button key={o.hours} onClick={() => setTimerHours(o.hours)} disabled={busy}
+                  className={`text-[11px] font-semibold px-2 py-1 rounded-full border transition-colors ${timerHours === o.hours ? "bg-primary text-primary-foreground border-primary" : "bg-surface-low text-foreground border-border hover:border-primary/40"}`}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {mode === "manual" && (
+            <p className="text-[11px] text-muted-foreground flex items-start gap-1">
+              <Info className="h-3 w-3 shrink-0 mt-0.5" /> You'll review and release this manually, within 3 working days of activation.
+            </p>
+          )}
+        </>
+      ) : (
+        <p className="text-[11px] text-muted-foreground flex items-start gap-1">
+          <Info className="h-3 w-3 shrink-0 mt-0.5" /> Always manually reviewed by you and shared within 3 working days of activation.
+        </p>
+      )}
+
+      {status && <div className="pt-1 border-t border-border">{status}</div>}
+    </div>
+  );
+}
+
 export function BreakGlassBlocks() {
   const qc = useQueryClient();
   const { data: members = [] } = useQuery({ queryKey: ["bg-members"], queryFn: () => dataService.listBreakGlassMembers() });
@@ -190,6 +306,10 @@ export function BreakGlassBlocks() {
 
   const { data: vaultDocs = [] } = useQuery({ queryKey: ["vault"], queryFn: () => dataService.listVaultDocuments() });
   const { data: bgFiles = {} as Record<BreakGlassBlock, string[]> } = useQuery({ queryKey: ["bg-files"], queryFn: () => dataService.getBreakGlassFiles() });
+  const { data: plan } = useQuery({ queryKey: ["emergency-plan"], queryFn: () => dataService.getEmergencyPlan() });
+  const { data: releaseConfig = {} } = useQuery({ queryKey: ["bg-release"], queryFn: () => dataService.getBreakGlassRelease() });
+  const { data: released = {} } = useQuery({ queryKey: ["bg-released"], queryFn: () => dataService.getBreakGlassReleased() });
+  const isActive = plan?.activationStatus === "Active";
 
   const [text, setText] = useState<Record<string, string>>({});
   useEffect(() => { setText(blocks as Record<string, string>); }, [blocks]);
@@ -290,6 +410,17 @@ export function BreakGlassBlocks() {
                   </ul>
                 )}
               </div>
+
+              <ReleasePolicy
+                block={key}
+                isActive={isActive}
+                activatedAt={plan?.activatedAt}
+                allConfig={releaseConfig}
+                config={releaseConfig[key]}
+                releasedAt={released[key]}
+                onConfigChanged={() => qc.invalidateQueries({ queryKey: ["bg-release"] })}
+                onReleased={() => qc.invalidateQueries({ queryKey: ["bg-released"] })}
+              />
             </div>
           );
         })}

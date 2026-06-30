@@ -81,7 +81,11 @@ function EmergencyPage() {
       activationStatus: next,
       activatedAt: next === "Active" ? new Date().toISOString() : null,
     });
-    if (ok) { qc.invalidateQueries({ queryKey: ["emergency-plan"] }); toast.success(next === "Active" ? "Plan ACTIVATED" : "Plan stood down"); }
+    if (ok) {
+      if (next === "Standby") await dataService.resetBreakGlassReleased();
+      qc.invalidateQueries({ queryKey: ["emergency-plan"] });
+      toast.success(next === "Active" ? "Plan ACTIVATED" : "Plan stood down");
+    }
   }
 
   async function downloadCard() {

@@ -18,30 +18,30 @@ serve(async (req) => {
     const admin = createClient(url, serviceKey);
     const adminProtected = createClient(url, serviceKey, { db: { schema: "protected" } });
 
-    // 1. Resolve the invite token to a member (no auth — token IS the credential).
+    // 1. Single source of truth for readiness: the same RPC the accept page uses.
+    //    Computes is_active + the per-block release policy (timer / manual review).
+    const { data: invite, error: inviteErr } = await admin.rpc("get_break_glass_invite", { p_token: token });
+    if (inviteErr || !invite) throw new Error("Invalid or expired invite link.");
+    if (invite.status === "declined") throw new Error("This invite has been declined.");
+    if (!invite.is_released) {
+      throw new Error(
+        invite.release_mode === "timer"
+          ? "Not available yet — this unlocks automatically on its set timer."
+          : "Not available yet — this is pending manual review.",
+      );
+    }
+    const shared: { id: string }[] = invite.shared_files ?? [];
+    if (!shared.some(f => f.id === docId)) throw new Error("This document was not shared with your role.");
+
+    // 2. Resolve the member's user_id (public table — safe, token already validated above).
     const { data: member } = await admin
       .from("break_glass_members")
-      .select("user_id, block, status")
+      .select("user_id")
       .eq("access_token", token)
       .maybeSingle();
     if (!member) throw new Error("Invalid or expired invite link.");
-    if (member.status === "declined") throw new Error("This invite has been declined.");
 
-    // 2. Only share documents while the emergency is actually active (break-glass).
-    const { data: plan } = await adminProtected
-      .from("emergency_plan")
-      .select("activation_status, break_glass_files")
-      .eq("user_id", member.user_id)
-      .maybeSingle();
-    if (!plan || plan.activation_status !== "Active") {
-      throw new Error("Not available yet — documents unlock only during an active emergency.");
-    }
-
-    // 3. The doc must be explicitly enabled for this caregiver's block.
-    const allowed: string[] = (plan.break_glass_files?.[member.block] ?? []) as string[];
-    if (!allowed.includes(docId)) throw new Error("This document was not shared with your role.");
-
-    // 4. Resolve the storage path and sign a short-lived URL.
+    // 3. Resolve the storage path and sign a short-lived URL.
     const { data: doc } = await adminProtected
       .from("digital_vault_documents")
       .select("storage_bucket_path, document_name")

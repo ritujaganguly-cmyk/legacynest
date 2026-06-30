@@ -1017,6 +1017,9 @@ export const dataService = {
       return true;
     }, false);
   },
+  // Auto-send via Resend — currently unused in the UI because the sandbox sender
+  // (onboarding@resend.dev) can only deliver to the Resend account's own verified
+  // address. Re-enable once a custom domain is verified in Resend.
   async sendBreakGlassInvite(member: BreakGlassMember, ctx: { inviterName: string; childName: string }): Promise<boolean> {
     return safe(async () => {
       if (!member.accessToken) throw new Error("Invite link not ready — save the member first.");
@@ -1031,6 +1034,16 @@ export const dataService = {
       await supabase.from("break_glass_members")
         .update({ status: "invited", invited_at: new Date().toISOString() })
         .eq("id", member.id);
+      return true;
+    }, false);
+  },
+  // Marks a member invited after the owner opens their own email client to send it.
+  async markBreakGlassInviteSent(id: string): Promise<boolean> {
+    return safe(async () => {
+      const { error } = await supabase.from("break_glass_members")
+        .update({ status: "invited", invited_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
       return true;
     }, false);
   },

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Heart, HeartPulse, Landmark, Scale, Send, Copy, Trash2, Check, Clock, X, Loader2, KeyRound, FileText } from "lucide-react";
+import { Heart, HeartPulse, Landmark, Scale, Mail, Copy, Trash2, Check, Clock, X, Loader2, KeyRound, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { dataService, type BreakGlassBlock, type BreakGlassMember, type VaultDocument } from "@/lib/data/mock";
 
@@ -10,6 +10,51 @@ const BLOCKS: { key: BreakGlassBlock; label: string; icon: typeof Heart; hint: s
   { key: "financial",  label: "Financial",  icon: Landmark,   hint: "Where funds are, who to contact, immediate money needs.",                     categories: ["Financial", "Insurance"] },
   { key: "legal",      label: "Legal",      icon: Scale,      hint: "Guardianship status, where key documents are, who has authority.",            categories: ["Legal", "Government", "Identity"] },
 ];
+
+const BLOCK_LABEL: Record<BreakGlassBlock, string> = {
+  daily_care: "Daily Care", medical: "Medical", financial: "Financial", legal: "Legal",
+};
+
+/** Copies text to the clipboard with a fallback for non-secure/iframe contexts where
+ *  the async Clipboard API silently throws. Always reports success or failure. */
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    throw new Error("clipboard API unavailable");
+  } catch {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+function buildInviteMailto(member: { name: string; email: string; block: BreakGlassBlock; rank: "primary" | "backup"; accessToken?: string }, inviterName: string, childName: string): string {
+  const link = `${window.location.origin}/accept/${member.accessToken}`;
+  const who = inviterName || "A LegacyNest family";
+  const label = BLOCK_LABEL[member.block];
+  const subject = `${who} has asked you to help with ${childName}'s ${label} care`;
+  const body =
+    `Dear ${member.name ? member.name.split(" ")[0] : "there"},\n\n` +
+    `${who} has named you as the ${member.rank === "backup" ? "backup" : "primary"} caregiver for ${childName}'s ${label} ` +
+    `in their LegacyNest emergency plan.\n\n` +
+    `Please review and respond using the link below:\n${link}\n\n` +
+    `Thank you,\n${who}`;
+  return `mailto:${member.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
 
 const INPUT = "w-full rounded-lg border border-border bg-surface-low px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
@@ -52,26 +97,35 @@ function MemberRow({
     else toast.error("Could not save caregiver.");
   }
 
-  async function sendInvite() {
+  async function ensureSaved(): Promise<BreakGlassMember | undefined> {
+    if (member && !dirty) return member;
+    const m = (await dataService.upsertBreakGlassMember({ block, rank, name: name.trim(), email: email.trim() })) ?? undefined;
+    if (m) onChanged();
+    return m;
+  }
+
+  async function openEmail() {
     if (!emailValid) { toast.error("Enter a valid email first."); return; }
     setBusy(true);
-    // ensure saved (so a token exists)
-    let m = member;
-    if (!m || dirty) {
-      m = (await dataService.upsertBreakGlassMember({ block, rank, name: name.trim(), email: email.trim() })) ?? undefined;
-      onChanged();
-    }
-    if (!m) { setBusy(false); toast.error("Could not prepare the invite."); return; }
-    const ok = await dataService.sendBreakGlassInvite(m, { inviterName, childName });
+    const m = await ensureSaved();
     setBusy(false);
-    if (ok) { toast.success(`Invite emailed to ${email}.`); onChanged(); }
-    else toast.error("Could not send the invite email. Check that Resend is configured.");
+    if (!m?.accessToken) { toast.error("Could not prepare the invite link."); return; }
+    window.open(buildInviteMailto(m, inviterName, childName), "_blank");
+    if (m.status === "draft") {
+      const ok = await dataService.markBreakGlassInviteSent(m.id);
+      if (ok) onChanged();
+    }
   }
 
   async function copyLink() {
-    if (!member?.accessToken) { toast.error("Save the caregiver first to get a link."); return; }
-    await navigator.clipboard.writeText(`${window.location.origin}/accept/${member.accessToken}`);
-    toast.success("Invite link copied.");
+    setBusy(true);
+    const m = await ensureSaved();
+    setBusy(false);
+    if (!m?.accessToken) { toast.error("Save the caregiver first to get a link."); return; }
+    const link = `${window.location.origin}/accept/${m.accessToken}`;
+    const ok = await copyToClipboard(link);
+    if (ok) toast.success("Invite link copied.");
+    else toast.error(`Could not copy automatically. Link: ${link}`);
   }
 
   async function remove() {
@@ -94,12 +148,12 @@ function MemberRow({
         <input className={INPUT} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} onBlur={save} />
       </div>
       <div className="flex items-center gap-2 flex-wrap">
-        <button onClick={sendInvite} disabled={busy || !emailValid}
+        <button onClick={openEmail} disabled={busy || !emailValid}
           className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-xs font-semibold hover:bg-primary/90 disabled:opacity-50">
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-          {member?.status === "invited" || member?.status === "accepted" ? "Re-send" : "Send invite"}
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
+          {member?.status === "invited" || member?.status === "accepted" ? "Re-open email" : "Open email to invite"}
         </button>
-        <button onClick={copyLink} disabled={!member?.accessToken}
+        <button onClick={copyLink} disabled={busy}
           className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-low disabled:opacity-50">
           <Copy className="h-3.5 w-3.5" /> Copy link
         </button>
@@ -157,6 +211,7 @@ export function BreakGlassBlocks() {
           <h2 className="text-lg font-bold text-foreground">Break-glass information</h2>
           <p className="text-sm text-muted-foreground">
             The four things a trusted person needs in the first hours. For each: write the summary, name a primary and a backup caregiver, and choose which Digital Vault documents to share.
+            Invites open in your own email app (Gmail, Outlook, etc.) — or copy the link and send it however you like.
           </p>
         </div>
       </div>

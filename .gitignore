@@ -12,3 +12,6 @@ dev.log
 .vercel
 
 .vercel
+
+# Supabase CLI local metadata
+supabase/.temp/

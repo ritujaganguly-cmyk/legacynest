@@ -1,7 +1,8 @@
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, HeartPulse, Landmark, Scale, Loader2, CheckCircle2, X, ShieldCheck } from "lucide-react";
+import { Heart, HeartPulse, Landmark, Scale, Loader2, CheckCircle2, X, ShieldCheck, FileText, Lock, ExternalLink, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 import logo from "@/assets/LegacyNest_Logo.jpeg";
 
 export const Route = createFileRoute("/accept/$token")({
@@ -15,6 +16,8 @@ const BLOCK_META: Record<string, { label: string; Icon: typeof Heart; desc: stri
   legal: { label: "Legal", Icon: Scale, desc: "legal matters" },
 };
 
+type SharedFile = { id: string; name: string; category: string };
+
 type Invite = {
   member_name: string | null;
   email: string;
@@ -23,6 +26,9 @@ type Invite = {
   status: string;
   inviter_name: string;
   child_name: string | null;
+  block_text: string | null;
+  is_active: boolean;
+  shared_files: SharedFile[] | null;
 };
 
 function AcceptInvite() {
@@ -32,18 +38,19 @@ function AcceptInvite() {
   const [error, setError] = useState("");
   const [responded, setResponded] = useState<"accepted" | "declined" | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [openingDoc, setOpeningDoc] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      const { data, error: err } = await supabase.rpc("get_break_glass_invite", { p_token: token });
-      if (err || !data) { setError("This invitation link is invalid or has expired."); setLoading(false); return; }
-      const inv = data as Invite;
-      setInvite(inv);
-      if (inv.status === "accepted") setResponded("accepted");
-      if (inv.status === "declined") setResponded("declined");
-      setLoading(false);
-    })();
-  }, [token]);
+  async function load() {
+    const { data, error: err } = await supabase.rpc("get_break_glass_invite", { p_token: token });
+    if (err || !data) { setError("This invitation link is invalid or has expired."); setLoading(false); return; }
+    const inv = data as Invite;
+    setInvite(inv);
+    if (inv.status === "accepted") setResponded("accepted");
+    if (inv.status === "declined") setResponded("declined");
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, [token]);
 
   async function respond(accept: boolean) {
     setSubmitting(true);
@@ -51,6 +58,18 @@ function AcceptInvite() {
     setSubmitting(false);
     if (err) { setError("Could not record your response. Please try again."); return; }
     setResponded(accept ? "accepted" : "declined");
+    await load(); // re-fetch with full shared-info now that they've responded
+  }
+
+  async function viewDocument(docId: string) {
+    setOpeningDoc(docId);
+    const { data, error: err } = await supabase.functions.invoke("get-break-glass-file", { body: { token, docId } });
+    setOpeningDoc(null);
+    if (err || !data?.url) {
+      toast.error((data as { error?: string } | null)?.error || "Could not open this document yet.");
+      return;
+    }
+    window.open(data.url, "_blank");
   }
 
   if (loading) {
@@ -72,6 +91,7 @@ function AcceptInvite() {
   const meta = BLOCK_META[invite.block] ?? { label: invite.block, Icon: ShieldCheck, desc: "their care" };
   const Icon = meta.Icon;
   const child = invite.child_name || "their child";
+  const files = invite.shared_files ?? [];
 
   return (
     <div className="min-h-screen bg-[#fdf6ee] flex flex-col items-center justify-center p-6">
@@ -85,29 +105,85 @@ function AcceptInvite() {
           <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-3">
             <Icon className="h-7 w-7" />
           </div>
-          <h1 className="text-xl font-bold text-foreground">A trusted-caregiver request</h1>
+          <h1 className="text-xl font-bold text-foreground">
+            {responded === "accepted" ? `${child}'s ${meta.label}` : "A trusted-caregiver request"}
+          </h1>
         </div>
 
-        {responded ? (
-          <div className="px-7 py-10 text-center">
-            {responded === "accepted" ? (
-              <>
-                <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-3" />
-                <h2 className="text-lg font-bold text-foreground">Thank you 💛</h2>
-                <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
-                  You've accepted to be the {invite.rank} caregiver for {child}'s {meta.label.toLowerCase()}.
-                  {invite.inviter_name} has been notified.
-                </p>
-              </>
+        {responded === "accepted" ? (
+          <div className="px-7 py-7 space-y-5">
+            <div className="text-center">
+              <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">
+                You're the <strong>{invite.rank}</strong> {meta.label.toLowerCase()} caregiver for {child}. Here's what's shared with you.
+              </p>
+            </div>
+
+            {/* Active / standby status */}
+            {invite.is_active ? (
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 flex items-start gap-2.5">
+                <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                <p className="text-sm text-red-800"><strong>Emergency is active.</strong> Documents below are available now.</p>
+              </div>
             ) : (
-              <>
-                <X className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                <h2 className="text-lg font-bold text-foreground">Response recorded</h2>
-                <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
-                  You've declined this request. {invite.inviter_name} can name someone else.
-                </p>
-              </>
+              <div className="rounded-xl bg-surface-low border border-border px-4 py-3 flex items-start gap-2.5">
+                <Lock className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <p className="text-sm text-muted-foreground">No emergency is active right now. Documents below will unlock automatically if one is declared.</p>
+              </div>
             )}
+
+            {/* Break-glass info text */}
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">{meta.label} summary</div>
+              {invite.block_text ? (
+                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap rounded-xl bg-surface-low border border-border p-4">{invite.block_text}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">{invite.inviter_name} hasn't written this yet.</p>
+              )}
+            </div>
+
+            {/* Shared documents */}
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Documents</span>
+              </div>
+              {files.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">No documents have been shared for this role yet.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {files.map(f => (
+                    <li key={f.id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-foreground truncate">{f.name}</div>
+                        <div className="text-[10px] text-muted-foreground">{f.category}</div>
+                      </div>
+                      {invite.is_active ? (
+                        <button
+                          onClick={() => viewDocument(f.id)}
+                          disabled={openingDoc === f.id}
+                          className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 disabled:opacity-50"
+                        >
+                          {openingDoc === f.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />} View
+                        </button>
+                      ) : (
+                        <span className="shrink-0 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                          <Lock className="h-3 w-3" /> Locked
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        ) : responded === "declined" ? (
+          <div className="px-7 py-10 text-center">
+            <X className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
+            <h2 className="text-lg font-bold text-foreground">Response recorded</h2>
+            <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
+              You've declined this request. {invite.inviter_name} can name someone else.
+            </p>
           </div>
         ) : (
           <div className="px-7 py-7 space-y-5">

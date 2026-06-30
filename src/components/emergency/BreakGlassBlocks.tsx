@@ -190,12 +190,12 @@ function MemberRow({
 }
 
 function ReleasePolicy({
-  block, isActive, activatedAt, allConfig, config, releasedAt, onConfigChanged, onReleased,
+  block, isActive, activatedAt, allConfig, config, releasedAt, onConfigChanged,
 }: {
   block: BreakGlassBlock; isActive: boolean; activatedAt: string | null | undefined;
   allConfig: Partial<Record<BreakGlassBlock, BreakGlassReleaseConfig>>;
   config?: BreakGlassReleaseConfig; releasedAt?: string;
-  onConfigChanged: () => void; onReleased: () => void;
+  onConfigChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const isDailyCare = block === "daily_care";
@@ -218,15 +218,10 @@ function ReleasePolicy({
     await saveConfig({ mode: "timer", timerHours: hours });
   }
 
-  async function releaseNow() {
-    setBusy(true);
-    const ok = await dataService.releaseBreakGlassNow(block);
-    setBusy(false);
-    if (ok) { toast.success("Released — caregivers can now see this information."); onReleased(); }
-    else toast.error("Could not release.");
-  }
-
-  // Live status, while an emergency is active
+  // Live status, while an emergency is active. Manual-review release is approved by
+  // a LegacyNest admin (see /admin/emergency), not self-released by the owner —
+  // this is the safety check that keeps a compromised account from instantly
+  // exposing medical/financial/legal documents.
   let status: ReactNode = null;
   if (isActive && activatedAt) {
     if (mode === "timer") {
@@ -240,13 +235,9 @@ function ReleasePolicy({
     } else {
       const dueBy = addWorkingDays(new Date(activatedAt), 3);
       status = (
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <span className="text-xs text-amber-700">Pending review — due by {dueBy.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
-          <button onClick={releaseNow} disabled={busy}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline disabled:opacity-50">
-            {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Unlock className="h-3 w-3" />} Release now
-          </button>
-        </div>
+        <span className="text-xs text-amber-700">
+          Pending LegacyNest review — expected by {dueBy.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+        </span>
       );
     }
   }
@@ -282,13 +273,13 @@ function ReleasePolicy({
           )}
           {mode === "manual" && (
             <p className="text-[11px] text-muted-foreground flex items-start gap-1">
-              <Info className="h-3 w-3 shrink-0 mt-0.5" /> You'll review and release this manually, within 3 working days of activation.
+              <Info className="h-3 w-3 shrink-0 mt-0.5" /> LegacyNest will review and release this, within 3 working days of activation.
             </p>
           )}
         </>
       ) : (
         <p className="text-[11px] text-muted-foreground flex items-start gap-1">
-          <Info className="h-3 w-3 shrink-0 mt-0.5" /> Always manually reviewed by you and shared within 3 working days of activation.
+          <Info className="h-3 w-3 shrink-0 mt-0.5" /> Always validated and approved by LegacyNest admin, within 3 working days of activation.
         </p>
       )}
 
@@ -308,7 +299,8 @@ export function BreakGlassBlocks() {
   const { data: bgFiles = {} as Record<BreakGlassBlock, string[]> } = useQuery({ queryKey: ["bg-files"], queryFn: () => dataService.getBreakGlassFiles() });
   const { data: plan } = useQuery({ queryKey: ["emergency-plan"], queryFn: () => dataService.getEmergencyPlan() });
   const { data: releaseConfig = {} } = useQuery({ queryKey: ["bg-release"], queryFn: () => dataService.getBreakGlassRelease() });
-  const { data: released = {} } = useQuery({ queryKey: ["bg-released"], queryFn: () => dataService.getBreakGlassReleased() });
+  // Polled so the owner sees a LegacyNest admin's approval without a manual refresh.
+  const { data: released = {} } = useQuery({ queryKey: ["bg-released"], queryFn: () => dataService.getBreakGlassReleased(), refetchInterval: 30000 });
   const isActive = plan?.activationStatus === "Active";
 
   const [text, setText] = useState<Record<string, string>>({});
@@ -419,7 +411,6 @@ export function BreakGlassBlocks() {
                 config={releaseConfig[key]}
                 releasedAt={released[key]}
                 onConfigChanged={() => qc.invalidateQueries({ queryKey: ["bg-release"] })}
-                onReleased={() => qc.invalidateQueries({ queryKey: ["bg-released"] })}
               />
             </div>
           );

@@ -140,7 +140,7 @@ function AcceptInvite() {
                   <strong>Emergency is active.</strong>{" "}
                   {invite.release_mode === "timer"
                     ? `This unlocks automatically${invite.unlocks_at ? ` at ${new Date(invite.unlocks_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}` : ""}.`
-                    : `This is being reviewed and will be shared${invite.unlocks_at ? ` by ${new Date(invite.unlocks_at).toLocaleDateString("en-IN", { day: "numeric", month: "long" })}` : " soon"}.`}
+                    : `LegacyNest is reviewing this and will share it${invite.unlocks_at ? ` by ${new Date(invite.unlocks_at).toLocaleDateString("en-IN", { day: "numeric", month: "long" })}` : " soon"}.`}
                 </p>
               </div>
             )}

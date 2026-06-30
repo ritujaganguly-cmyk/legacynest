@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AlertTriangle, CheckCircle2, XCircle, RefreshCw, Shield,
-  Phone, Mail, Users, Clock, Zap, ChevronDown, ChevronUp,
+  Phone, Mail, Users, Clock, Zap, ChevronDown, ChevronUp, KeyRound, Unlock,
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/emergency")({
@@ -35,6 +35,22 @@ type ActivationCase = {
   care_circle: CareCircleMember[] | null;
   coordinators: Coordinator[] | null;
   requests: Request[];
+};
+
+type BreakGlassMemberInfo = { name: string; email: string; rank: "primary" | "backup" };
+type PendingBreakGlass = {
+  user_id: string;
+  parent_email: string;
+  parent_name: string | null;
+  child_name: string | null;
+  block: string;
+  activated_at: string;
+  due_by: string;
+  members: BreakGlassMemberInfo[] | null;
+};
+
+const BLOCK_LABEL: Record<string, string> = {
+  daily_care: "Daily Care", medical: "Medical", financial: "Financial", legal: "Legal",
 };
 
 function autoTriggerLabel(h: number | null): string {
@@ -87,6 +103,25 @@ function AdminEmergencyPage() {
     },
     refetchInterval: 10000,
   });
+
+  const { data: pendingBreakGlass = [], refetch: refetchBreakGlass } = useQuery({
+    queryKey: ["admin-pending-break-glass"],
+    queryFn: async () => {
+      const res = await supabase.rpc("admin_list_pending_break_glass");
+      return (res.data ?? []) as PendingBreakGlass[];
+    },
+    refetchInterval: 15000,
+  });
+  const [approving, setApproving] = useState<string | null>(null);
+
+  async function approveBreakGlass(p: PendingBreakGlass) {
+    const key = `${p.user_id}:${p.block}`;
+    setApproving(key);
+    const { error } = await supabase.rpc("admin_release_break_glass", { p_user_id: p.user_id, p_block: p.block });
+    setApproving(null);
+    if (error) return;
+    await refetchBreakGlass();
+  }
 
   // Auto-approve cases where timer has expired
   useEffect(() => {
@@ -154,6 +189,52 @@ function AdminEmergencyPage() {
           {isFetching ? "Refreshing…" : "Refresh"}
         </button>
       </div>
+
+      {/* Pending Break-Glass Approvals */}
+      {pendingBreakGlass.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-bold text-white/70 uppercase tracking-wider flex items-center gap-2">
+            <KeyRound className="w-4 h-4 text-amber-400" /> Pending Break-Glass Approvals ({pendingBreakGlass.length})
+          </h2>
+          <div className="space-y-2">
+            {pendingBreakGlass.map(p => {
+              const key = `${p.user_id}:${p.block}`;
+              const overdue = new Date(p.due_by).getTime() < Date.now();
+              return (
+                <div key={key} className={`rounded-xl border p-4 flex items-start justify-between gap-4 flex-wrap ${overdue ? "border-red-500/40 bg-red-900/10" : "border-amber-500/30 bg-amber-900/10"}`}>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-white font-bold">{BLOCK_LABEL[p.block] ?? p.block}</span>
+                      <span className="text-xs text-white/40">for {p.child_name || "child"} · {p.parent_name || p.parent_email}</span>
+                      {overdue && <span className="text-[10px] font-bold bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">OVERDUE</span>}
+                    </div>
+                    <div className="text-xs text-white/40 flex items-center gap-3 flex-wrap">
+                      <span>Activated {new Date(p.activated_at).toLocaleString("en-IN")}</span>
+                      <span className={overdue ? "text-red-400 font-semibold" : ""}>Due by {new Date(p.due_by).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                    </div>
+                    {(p.members ?? []).length > 0 && (
+                      <div className="text-xs text-white/50 flex items-center gap-3 flex-wrap mt-1">
+                        {(p.members ?? []).map((m, i) => (
+                          <span key={i} className="flex items-center gap-1">
+                            <span className="text-white/30">{m.rank === "primary" ? "Primary:" : "Backup:"}</span> {m.name || m.email}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => approveBreakGlass(p)}
+                    disabled={approving === key}
+                    className="flex items-center gap-1.5 text-xs font-bold bg-green-600 hover:bg-green-500 text-white px-3 py-2 rounded-lg disabled:opacity-50 transition-colors shrink-0"
+                  >
+                    {approving === key ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Unlock className="w-3.5 h-3.5" />} Approve &amp; Release
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="text-white/40 text-center py-12">Loading…</div>

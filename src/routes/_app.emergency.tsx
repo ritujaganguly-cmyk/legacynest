@@ -116,7 +116,7 @@ function EmergencyPage() {
             <ShieldAlert className="h-6 w-6 text-primary" /> Emergency Continuity Plan
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            What to do in the first 24 hours -- if you are gone, can a trusted person keep your child safe?
+            Decide what your caregivers should know, name who gets it, and set up how your coordinators can act if something happens to you.
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -156,13 +156,10 @@ function EmergencyPage() {
         </button>
       </div>
 
-      {/* Break-glass information — 4 domain blocks with primary/backup caregivers */}
-      <BreakGlassBlocks />
-
       {/* Emergency Coordinator -- CALL FIRST */}
-      <div className="legacy-card border-l-4 border-l-red-500 p-5">
+      <div className="legacy-card border-l-4 border-l-green-400 p-5">
         <div className="flex items-start justify-between mb-1">
-          <div className="text-xs font-bold uppercase tracking-widest text-red-600">Call First — Emergency Coordinator</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-green-700">Call First — Emergency Coordinator</div>
           <button onClick={() => setCoordEdit(e => !e)} className="text-xs text-primary hover:underline shrink-0">
             {coordEdit ? "Cancel" : plan?.coordinatorName ? "Edit" : "Set"}
           </button>
@@ -195,7 +192,7 @@ function EmergencyPage() {
               <div className="text-xs text-muted-foreground">{plan.coordinatorRelationship || "Coordinator"}</div>
             </div>
             {plan.coordinatorPhone && (
-              <a href={`tel:${plan.coordinatorPhone}`} className="inline-flex items-center gap-2 rounded-lg bg-red-600 text-white px-4 py-2 text-sm font-semibold hover:bg-red-700">
+              <a href={`tel:${plan.coordinatorPhone}`} className="inline-flex items-center gap-2 rounded-lg bg-green-600 text-white px-4 py-2 text-sm font-semibold hover:bg-green-700">
                 <Phone className="h-4 w-4" /> {plan.coordinatorPhone}
               </a>
             )}
@@ -211,6 +208,8 @@ function EmergencyPage() {
         )}
       </div>
 
+      {/* Break-glass information — 4 domain blocks with primary/backup caregivers */}
+      <BreakGlassBlocks />
 
       {/* ── Activation Protocol ── */}
       <div className="rounded-2xl border border-border bg-card p-6">

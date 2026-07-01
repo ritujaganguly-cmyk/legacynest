@@ -150,6 +150,7 @@ function useAlerts(loggedIn: boolean) {
 // ── Main AppShell ────────────────────────────────────────────────────────────
 import { ConsentGate } from "@/components/compliance/ConsentGate";
 import { hasAcknowledgedPrivacy } from "@/lib/compliance";
+import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 
 export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -160,7 +161,11 @@ export function AppShell() {
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const [consentChecked, setConsentChecked] = useState(false);
+  const [consentResolved, setConsentResolved] = useState(false);
   const [needsConsent, setNeedsConsent] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
 
   useEffect(() => {
     if (hydrated && !user) navigate({ to: "/sign-in" });
@@ -170,8 +175,33 @@ export function AppShell() {
   useEffect(() => {
     if (!user || consentChecked) return;
     setConsentChecked(true);
-    hasAcknowledgedPrivacy().then(ack => { if (!ack) setNeedsConsent(true); });
+    hasAcknowledgedPrivacy().then(ack => {
+      if (!ack) setNeedsConsent(true);
+      setConsentResolved(true);
+    });
   }, [user, consentChecked]);
+
+  // Check the two most critical safety essentials — Call First coordinator and the
+  // Daily Care break-glass summary + primary caregiver. If either is missing, guide
+  // the parent through a short first-run setup. Runs only after consent is resolved
+  // (and not needed), so the two full-screen gates never race each other. Re-checked
+  // once per session; if dismissed, it simply reappears next login until both are
+  // actually filled in.
+  useEffect(() => {
+    if (!user || !consentResolved || needsConsent || onboardingChecked) return;
+    setOnboardingChecked(true);
+    (async () => {
+      const [plan, blocks, members] = await Promise.all([
+        dataService.getEmergencyPlan(),
+        dataService.getBreakGlassBlocks(),
+        dataService.listBreakGlassMembers(),
+      ]);
+      const hasCallFirst = !!(plan?.coordinatorName && plan?.coordinatorPhone);
+      const dailyCarePrimary = members.find(m => m.block === "daily_care" && m.rank === "primary");
+      const hasDailyCare = !!(blocks?.daily_care && dailyCarePrimary?.name && dailyCarePrimary?.email);
+      if (!hasCallFirst || !hasDailyCare) setNeedsOnboarding(true);
+    })();
+  }, [user, consentResolved, needsConsent, onboardingChecked]);
 
   useEffect(() => {
     if (user) dataService.getChildProfile().then(p => { if (p?.name) setChildName(p.name); });
@@ -202,6 +232,15 @@ export function AppShell() {
 
   if (needsConsent) {
     return <ConsentGate onAccepted={() => setNeedsConsent(false)} />;
+  }
+
+  if (needsOnboarding && !onboardingDismissed) {
+    return (
+      <OnboardingWizard
+        onClose={() => setOnboardingDismissed(true)}
+        onFinished={() => { setNeedsOnboarding(false); setOnboardingDismissed(true); }}
+      />
+    );
   }
 
   return (

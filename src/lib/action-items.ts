@@ -22,6 +22,20 @@ function calcAge(dob: string): number {
   return age;
 }
 
+/** Years remaining until a date (negative once past). */
+function yearsUntil(dateStr: string): number {
+  return (new Date(dateStr).getTime() - Date.now()) / (365.25 * 24 * 60 * 60 * 1000);
+}
+
+/** Renewal/expiry horizon bucketing used across UDID, Niramaya, and other
+ *  insurance policies: due within 6 months → short term (urgent, or overdue);
+ *  6 months to 1 year → medium term; beyond a year → long term. */
+function renewalHorizon(yearsLeft: number): { horizon: "short" | "medium" | "long"; urgent: boolean } {
+  if (yearsLeft <= 0.5) return { horizon: "short", urgent: true };
+  if (yearsLeft <= 1) return { horizon: "medium", urgent: false };
+  return { horizon: "long", urgent: false };
+}
+
 export type ActionItemsInput = {
   childName?: string;
   childDob?: string;
@@ -42,6 +56,7 @@ export type ActionItemsInput = {
   careCircleCount?: number;
   insurancePolicies?: Array<{ policyType: string; providerName: string; renewalReminderDate?: string }>;
   legalCapturedInWillTrust?: boolean; // whether assets have nominee/trust
+  successionGuardians?: Array<{ name: string; responsibilities?: string[] }>;
   done?: Record<string, boolean>;     // journey completion map
 };
 
@@ -148,6 +163,31 @@ export function generateActionItems(input: ActionItemsInput): {
     });
   }
 
+  // Named successors missing financial or legal responsibility coverage
+  const guardians = input.successionGuardians ?? [];
+  if (guardians.length > 0) {
+    const hasFinancial = guardians.some(g => (g.responsibilities ?? []).some(r => r.toLowerCase().includes("financial")));
+    const hasLegal = guardians.some(g => (g.responsibilities ?? []).some(r => r.toLowerCase().includes("legal")));
+    if (!hasFinancial) {
+      short.push({
+        title: "Identify who handles financial decisions after you",
+        detail: "None of your named successors are assigned Financial Management. Go to Succession Planning and assign this responsibility to a guardian.",
+        urgent: true,
+        horizon: "short",
+        source: "Succession Planning",
+      });
+    }
+    if (!hasLegal) {
+      short.push({
+        title: "Identify who handles legal decisions after you",
+        detail: "None of your named successors are assigned Legal Representation. Go to Succession Planning and assign this responsibility to a guardian.",
+        urgent: true,
+        horizon: "short",
+        source: "Succession Planning",
+      });
+    }
+  }
+
   // ── MEDIUM TERM (6 months – 2 years) ────────────────────────────────
 
   // Special Needs Trust not created
@@ -213,51 +253,60 @@ export function generateActionItems(input: ActionItemsInput): {
     });
   }
 
-  // ── LONG TERM (2+ years) ─────────────────────────────────────────────
+  // ── RENEWALS — bucketed by how soon they're due ──────────────────────
+  // Within 6 months → short term (urgent). 6 months–1 year → medium term.
+  // Beyond a year → long term.
+
+  const buckets = { short, medium, long };
 
   // UDID renewal
   if (input.udidValidity) {
     const expiry = new Date(input.udidValidity);
-    const yearsLeft = (expiry.getTime() - Date.now()) / (365.25 * 24 * 60 * 60 * 1000);
-    if (yearsLeft > 0.5) {
-      long.push({
-        title: `Renew UDID before ${expiry.toLocaleDateString("en-IN")}`,
-        detail: "UDID renewal must be initiated 6 months before expiry. Lapse disqualifies from Niramaya and other government benefits.",
-        urgent: yearsLeft < 1,
-        horizon: "long",
-        source: "Child Profile",
-      });
-    }
+    const yearsLeft = yearsUntil(input.udidValidity);
+    const { horizon, urgent } = renewalHorizon(yearsLeft);
+    buckets[horizon].push({
+      title: `Renew UDID before ${expiry.toLocaleDateString("en-IN")}`,
+      detail: "UDID renewal must be initiated 6 months before expiry. Lapse disqualifies from Niramaya and other government benefits.",
+      urgent,
+      horizon,
+      source: "Child Profile",
+    });
   }
 
   // Niramaya renewal date
   if (input.niramayaRenewalDate) {
     const renewal = new Date(input.niramayaRenewalDate);
-    long.push({
+    const { horizon, urgent } = renewalHorizon(yearsUntil(input.niramayaRenewalDate));
+    buckets[horizon].push({
       title: `Renew Niramaya insurance by ${renewal.toLocaleDateString("en-IN")}`,
       detail: "Niramaya must be renewed annually. Lapse means loss of ₹1L health cover.",
-      urgent: (renewal.getTime() - Date.now()) < 60 * 24 * 60 * 60 * 1000,
-      horizon: "long",
+      urgent,
+      horizon,
       source: "Insurance",
     });
   }
 
-  // Other insurance renewals
+  // Other insurance renewals — each bucketed individually by its own due date
   const renewals = (input.insurancePolicies ?? []).filter(p => p.renewalReminderDate && !p.policyType?.toLowerCase().includes("niramaya"));
-  if (renewals.length > 0) {
-    long.push({
-      title: `Track ${renewals.length} insurance policy renewal(s)`,
-      detail: renewals.map(p => `${p.policyType} — ${p.providerName}`).join(" · "),
-      horizon: "long",
+  for (const p of renewals) {
+    const renewal = new Date(p.renewalReminderDate!);
+    const { horizon, urgent } = renewalHorizon(yearsUntil(p.renewalReminderDate!));
+    buckets[horizon].push({
+      title: `Renew ${p.policyType} by ${renewal.toLocaleDateString("en-IN")}`,
+      detail: `${p.providerName} — renew before this date to avoid a coverage gap.`,
+      urgent,
+      horizon,
       source: "Insurance",
     });
   }
 
-  // Annual plan review
-  long.push({
-    title: "Annual plan review — review every 12 months",
-    detail: "Revisit your corpus projection, care circle, residential options and insurance coverage every year. Life changes fast.",
-    horizon: "long",
+  // ── MEDIUM TERM: recurring plan validation ───────────────────────────
+  // A living plan needs periodic revisiting — every 6-9 months, not annually,
+  // since a lot can change for a growing child in a year.
+  medium.push({
+    title: "Log in and revalidate your plan every 6–9 months",
+    detail: "Revisit your corpus projection, care circle, residential options and insurance coverage every 6–9 months. Life changes fast — keep the plan current.",
+    horizon: "medium",
     source: "General",
   });
 

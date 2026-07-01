@@ -16,64 +16,64 @@ export type Chapter = {
 
 export const CHAPTERS: Chapter[] = [
   {
-    num: 1, key: "child", title: "Your Child's Profile",
+    num: 1, key: "emergency", title: "Emergency Plan",
+    subtitle: "Who to call first and your child's daily care basics",
+    route: "/emergency", minutes: 5,
+    why: "The one thing that can't wait — set this up before anything else.",
+  },
+  {
+    num: 2, key: "child", title: "Your Child's Profile",
     subtitle: "Who they are, their diagnosis, daily care needs",
     route: "/child-profile", minutes: 12,
     why: "Everything else builds on knowing your child.",
   },
   {
-    num: 2, key: "parent_profile", title: "Your Profile",
+    num: 3, key: "parent_profile", title: "Your Profile",
     subtitle: "Primary caregiver details and health information",
     route: "/parent-profile", minutes: 8,
     why: "Future caregivers need to know who you are and how to reach you.",
   },
   {
-    num: 3, key: "care_circle", title: "Care Circle",
+    num: 4, key: "care_circle", title: "Care Circle",
     subtitle: "Trusted people who can step in when needed",
     route: "/care-circle", minutes: 10,
     why: "Without a named backup, strangers make decisions for your child.",
   },
   {
-    num: 4, key: "succession", title: "Succession Planning",
+    num: 5, key: "succession", title: "Succession Planning",
     subtitle: "Guardian hierarchy and handover documentation",
     route: "/caregiver", minutes: 12,
     why: "Name who steps in — in order — so there is no ambiguity.",
   },
   {
-    num: 5, key: "medical", title: "Medical Records",
+    num: 6, key: "medical", title: "Medical Records",
     subtitle: "Doctors, medications, therapies, appointments",
     route: "/medical", minutes: 15,
     why: "Any caregiver stepping in needs this to keep your child safe.",
   },
   {
-    num: 6, key: "residential", title: "Residential Planning",
+    num: 7, key: "residential", title: "Residential Planning",
     subtitle: "Where they will live — primary, backup, and emergency options",
     route: "/residential", minutes: 12,
     why: "Good group homes have 5–10 year waitlists. Apply now.",
   },
   {
-    num: 7, key: "insurance", title: "Insurance",
+    num: 8, key: "insurance", title: "Insurance",
     subtitle: "Health, life, and disability insurance policies",
     route: "/insurance-policies", minutes: 10,
     why: "Niramaya and LIC policies protect against unexpected care costs.",
   },
   {
-    num: 8, key: "financial", title: "Financial Planning",
+    num: 9, key: "financial", title: "Financial Planning",
     subtitle: "Lifetime corpus, assets and government schemes",
     route: "/financial", minutes: 15,
     why: "Ensure the money outlasts the need — mapped to your child's real costs.",
   },
   {
-    num: 9, key: "legal", title: "Legal Foundation",
+    num: 10, key: "legal", title: "Legal Foundation",
     subtitle: "Will, Special Needs Trust, guardianship, power of attorney",
     route: "/legal", minutes: 10,
     why: "Without legal documents, courts decide your child's future.",
-  },
-  {
-    num: 10, key: "emergency", title: "Emergency Plan",
-    subtitle: "Who acts first and what they must know in 24 hours",
-    route: "/emergency", minutes: 15,
-    why: "With everything documented, now activate your emergency safety net.",
   },
 ];
 

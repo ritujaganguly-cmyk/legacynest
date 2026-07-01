@@ -80,6 +80,11 @@ function Dashboard() {
       const hasNiramaya = (policies ?? []).some((p: { policyType?: string }) => p.policyType?.toLowerCase().includes("niramaya"));
       const niramayaPolicy = (policies ?? []).find((p: { policyType?: string }) => p.policyType?.toLowerCase().includes("niramaya"));
       const careCircle = await dataService.listCareCircle().catch(() => []);
+      const successionPlans = await dataService.listSuccessionPlans().catch(() => []);
+      const activeSuccessionPlan = successionPlans.length > 0 ? successionPlans[0] : null;
+      const successionGuardians = activeSuccessionPlan
+        ? await dataService.listSuccessionGuardians(activeSuccessionPlan.id).catch(() => [])
+        : [];
 
       setActionInput({
         childName: child?.name,
@@ -99,6 +104,7 @@ function Dashboard() {
           providerName: p.providerName ?? "",
           renewalReminderDate: p.renewalReminderDate,
         })),
+        successionGuardians: successionGuardians.map(g => ({ name: g.name, responsibilities: g.responsibilities })),
         done: completionMap,
       });
     } finally {

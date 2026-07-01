@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as ReviewRouteImport } from './routes/review'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as EmergencyConfirmRouteImport } from './routes/emergency-confirm'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/_app'
@@ -56,6 +57,11 @@ const SignInRoute = SignInRouteImport.update({
 const ReviewRoute = ReviewRouteImport.update({
   id: '/review',
   path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmergencyConfirmRoute = EmergencyConfirmRouteImport.update({
@@ -212,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/emergency-confirm': typeof EmergencyConfirmRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/review': typeof ReviewRoute
   '/sign-in': typeof SignInRoute
   '/support': typeof SupportRoute
@@ -246,6 +253,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/emergency-confirm': typeof EmergencyConfirmRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/review': typeof ReviewRoute
   '/sign-in': typeof SignInRoute
   '/support': typeof SupportRoute
@@ -282,6 +290,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/emergency-confirm': typeof EmergencyConfirmRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/review': typeof ReviewRoute
   '/sign-in': typeof SignInRoute
   '/support': typeof SupportRoute
@@ -318,6 +327,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/emergency-confirm'
+    | '/reset-password'
     | '/review'
     | '/sign-in'
     | '/support'
@@ -352,6 +362,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/emergency-confirm'
+    | '/reset-password'
     | '/review'
     | '/sign-in'
     | '/support'
@@ -387,6 +398,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/admin'
     | '/emergency-confirm'
+    | '/reset-password'
     | '/review'
     | '/sign-in'
     | '/support'
@@ -423,6 +435,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   EmergencyConfirmRoute: typeof EmergencyConfirmRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ReviewRoute: typeof ReviewRoute
   SignInRoute: typeof SignInRoute
   SupportRoute: typeof SupportRoute
@@ -452,6 +465,13 @@ declare module '@tanstack/react-router' {
       path: '/review'
       fullPath: '/review'
       preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/emergency-confirm': {
@@ -734,6 +754,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   EmergencyConfirmRoute: EmergencyConfirmRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ReviewRoute: ReviewRoute,
   SignInRoute: SignInRoute,
   SupportRoute: SupportRoute,

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { dataService, type BreakGlassBlock, type BreakGlassMember, type VaultDocument, type BreakGlassReleaseConfig } from "@/lib/data/mock";
 import { EMAIL_PROVIDERS, type EmailProvider, sendViaProvider, copyToClipboard } from "@/lib/email-providers";
 import { addWorkingDays } from "@/lib/working-days";
+import { buildBreakGlassInviteText } from "@/lib/break-glass-invite";
 
 const TIMER_OPTIONS = [
   { label: "5 minutes", hours: 0.083 },
@@ -20,24 +21,6 @@ const BLOCKS: { key: BreakGlassBlock; label: string; icon: typeof Heart; hint: s
   { key: "financial",  label: "Financial",  icon: Landmark,   hint: "Where funds are, who to contact, immediate money needs.",                     categories: ["Financial", "Insurance"],                                border: "border-amber-200",  iconBg: "bg-amber-50",  iconText: "text-amber-600" },
   { key: "legal",      label: "Legal",      icon: Scale,      hint: "Guardianship status, where key documents are, who has authority.",            categories: ["Legal", "Government", "Identity"],                       border: "border-violet-200", iconBg: "bg-violet-50", iconText: "text-violet-500" },
 ];
-
-const BLOCK_LABEL: Record<BreakGlassBlock, string> = {
-  daily_care: "Daily Care", medical: "Medical", financial: "Financial", legal: "Legal",
-};
-
-function buildInviteText(member: { name: string; email: string; block: BreakGlassBlock; rank: "primary" | "backup"; accessToken?: string }, inviterName: string, childName: string) {
-  const link = `${window.location.origin}/accept/${member.accessToken}`;
-  const who = inviterName || "A LegacyNest family";
-  const label = BLOCK_LABEL[member.block];
-  const subject = `${who} has asked you to help with ${childName}'s ${label} care`;
-  const body =
-    `Dear ${member.name ? member.name.split(" ")[0] : "there"},\n\n` +
-    `${who} has named you as the ${member.rank === "backup" ? "backup" : "primary"} caregiver for ${childName}'s ${label} ` +
-    `in their LegacyNest emergency plan.\n\n` +
-    `Please review and respond using the link below:\n${link}\n\n` +
-    `Thank you,\n${who}`;
-  return { to: member.email, subject, body, link };
-}
 
 const INPUT = "w-full rounded-lg border border-border bg-surface-low px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
@@ -106,7 +89,7 @@ function MemberRow({
     setBusy(false);
     if (!m?.accessToken) { toast.error("Could not prepare the invite link."); return; }
 
-    const t = buildInviteText(m, inviterName, childName);
+    const t = buildBreakGlassInviteText(m, inviterName, childName);
     const providerInfo = EMAIL_PROVIDERS.find(p => p.key === provider)!;
     const { copied } = await sendViaProvider(provider, t, t.link);
 

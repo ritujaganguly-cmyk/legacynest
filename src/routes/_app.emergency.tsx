@@ -258,7 +258,6 @@ function ActivationCoordinators() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-  const [autoTrigger, setAutoTrigger] = useState<number | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", relationship: "" });
 
   const load = useCallback(async () => {
@@ -271,7 +270,6 @@ function ActivationCoordinators() {
     setCoords((c.data ?? []) as Coordinator[]);
     const con = co.data as Consent | null;
     setConsent(con);
-    setAutoTrigger(con?.auto_trigger_hours ?? null);
     setLoading(false);
   }, []);
 
@@ -354,20 +352,11 @@ function ActivationCoordinators() {
     const needed = majorityNeeded(total);
     const consentText = `I, the account holder, authorise LegacyNest to activate my Emergency Plan when ${needed} of ${total} named Emergency Coordinators submit a confirmation request via legacynest.co.in/emergency-confirm using their registered email and activation code. I consent to LegacyNest notifying my Care Circle members and sharing role-specific documents upon activation. Signed: ${new Date().toISOString()}`;
 
-    // Try with auto_trigger_hours first; fall back without it if column doesn't exist yet
-    let { error } = await pdb.from("emergency_consent").upsert({
+    // Plan activation is always reviewed and approved by a LegacyNest admin — no auto-trigger option.
+    const { error } = await pdb.from("emergency_consent").upsert({
       user_id: user.id, signed_at: new Date().toISOString(), consent_text: consentText,
       majority_rule: `${needed} of ${total}`, checkin_freq: "monthly",
-      auto_trigger_hours: autoTrigger,
     }, { onConflict: "user_id" });
-
-    if (error?.message?.includes("auto_trigger_hours")) {
-      // Migration 038 not yet run — save without it
-      ({ error } = await pdb.from("emergency_consent").upsert({
-        user_id: user.id, signed_at: new Date().toISOString(), consent_text: consentText,
-        majority_rule: `${needed} of ${total}`, checkin_freq: "monthly",
-      }, { onConflict: "user_id" }));
-    }
 
     if (!error) { toast.success("Consent signed and recorded."); setShowConsent(false); await load(); }
     else toast.error(`Could not save consent: ${error.message}`);
@@ -516,54 +505,6 @@ function ActivationCoordinators() {
         )}
       </div>
 
-      {/* Auto-trigger setting (only before consent is signed) */}
-      {total >= 3 && !consentSigned && (
-        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-          <div>
-            <h3 className="text-sm font-bold text-foreground">Auto-Activation Timer</h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              Controls only whether the <strong>emergency plan itself</strong> turns Active automatically once
-              coordinators reach majority, or waits for LegacyNest admin approval (recommended for first setup).
-            </p>
-            <p className="text-xs text-muted-foreground mt-1.5 rounded-lg bg-surface-low border border-border px-3 py-2">
-              This does <strong>not</strong> control what information is shared. Once Active — either way —
-              <strong> Daily Care</strong> break-glass info follows its own release setting (timer or manual,
-              set above), and <strong>Medical, Financial, and Legal</strong> are always reviewed and released by
-              LegacyNest admin, within 3 working days.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { label: "Off (manual review)", value: null },
-              { label: "5 minutes", value: 0.083 },
-              { label: "1 hour", value: 1 },
-              { label: "12 hours", value: 12 },
-              { label: "24 hours", value: 24 },
-            ].map(opt => (
-              <button
-                key={String(opt.value)}
-                onClick={() => setAutoTrigger(opt.value)}
-                className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
-                  autoTrigger === opt.value
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-surface-low text-foreground border-border hover:border-primary/40"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-          {autoTrigger !== null && (
-            <p className="text-xs text-warning font-medium">
-              ⚡ Once {majorityNeeded(total)} of {total} coordinators confirm, the plan activates automatically after{" "}
-              {autoTrigger === 0.083 ? "5 minutes" : autoTrigger === 1 ? "1 hour" : `${autoTrigger} hours`} —
-              no admin review needed to turn the plan Active. Sharing break-glass information is still governed
-              separately by each block's release setting above.
-            </p>
-          )}
-        </div>
-      )}
-
       {/* Consent */}
       {total >= 3 && (
         <div className={`rounded-xl border p-5 ${consentSigned ? "border-success/30 bg-success/5" : "border-primary/30 bg-primary/5"}`}>
@@ -634,14 +575,13 @@ function ActivationCoordinators() {
             <div className="rounded-lg bg-surface-low border border-border p-4 text-xs text-muted-foreground leading-relaxed space-y-2">
               <p><strong className="text-foreground">I hereby authorise LegacyNest</strong> to activate my Emergency Continuity Plan under the following conditions:</p>
               <p>1. When <strong className="text-foreground">{needed} of {total}</strong> Emergency Coordinators I have named submit a confirmation request at legacynest.co.in/emergency-confirm using their registered email and unique activation code.</p>
-              <p>2. LegacyNest will review all requests before taking any action{autoTrigger ? ` (auto-activates after ${autoTrigger === 0.083 ? "5 minutes" : autoTrigger === 1 ? "1 hour" : `${autoTrigger} hours`})` : " within 24 hours"}.</p>
+              <p>2. LegacyNest will review all requests before taking any action, within 24 hours.</p>
               <p>3. Upon activation, LegacyNest will share role-specific documents with each named caregiver — limited to what I have tagged them for. Daily caregivers will not receive financial or legal documents.</p>
               <p>4. The Emergency Plan PDF will be sent to all named Emergency Coordinators.</p>
               <p>5. This consent is stored permanently as a legal record.</p>
               <p>6. LegacyNest acts in good faith and is not liable for false activations made in bad faith by coordinators.</p>
               <p className="font-semibold text-foreground pt-1">Coordinators: {coords.map(c => c.name).join(", ")}</p>
               <p className="font-semibold text-foreground">Majority required: {needed} of {total}</p>
-              {autoTrigger && <p className="font-semibold text-foreground">Auto-trigger: {autoTrigger === 0.083 ? "5 minutes" : autoTrigger === 1 ? "1 hour" : `${autoTrigger} hours`} after majority</p>}
             </div>
             <div className="flex justify-end gap-3">
               <button onClick={() => setShowConsent(false)} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-surface-low">Cancel</button>

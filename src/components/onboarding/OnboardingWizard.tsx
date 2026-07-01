@@ -15,10 +15,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Heart, Phone, ShieldAlert, PartyPopper, ArrowRight, ArrowLeft, X,
-  Loader2, Sparkles, KeyRound, ChevronRight,
+  Loader2, Sparkles, KeyRound, ChevronRight, Mail, Copy, ChevronDown,
+  ExternalLink, Smartphone, CheckCircle2, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
-import { dataService } from "@/lib/data/mock";
+import { dataService, type BreakGlassMember } from "@/lib/data/mock";
+import { EMAIL_PROVIDERS, type EmailProvider, sendViaProvider, copyToClipboard } from "@/lib/email-providers";
+import { buildBreakGlassInviteText } from "@/lib/break-glass-invite";
 
 const INPUT = "w-full rounded-xl border border-border bg-surface-low px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary";
 const LABEL = "block text-sm font-semibold text-foreground mb-1.5";
@@ -45,6 +48,11 @@ export function OnboardingWizard({ onClose, onFinished }: Props) {
   const [caregiverName, setCaregiverName] = useState("");
   const [caregiverEmail, setCaregiverEmail] = useState("");
 
+  // ── Step 3: who to send the Daily Care invite to ────────────────────────
+  const [dailyCareMember, setDailyCareMember] = useState<BreakGlassMember | null>(null);
+  const [childName, setChildName] = useState("your child");
+  const [inviterName, setInviterName] = useState("");
+
   useEffect(() => {
     // Prefill from any partial data already saved, so re-opening isn't a blank slate.
     dataService.getEmergencyPlan().then(p => {
@@ -57,7 +65,16 @@ export function OnboardingWizard({ onClose, onFinished }: Props) {
     });
     dataService.listBreakGlassMembers().then(members => {
       const primary = members.find(m => m.block === "daily_care" && m.rank === "primary");
-      if (primary) { setCaregiverName(primary.name); setCaregiverEmail(primary.email); }
+      if (primary) {
+        setCaregiverName(primary.name);
+        setCaregiverEmail(primary.email);
+        setDailyCareMember(primary);
+      }
+    });
+    dataService.getChildProfile().then(c => { if (c?.name) setChildName(c.name); });
+    dataService.getParentProfile().then(p => {
+      const name = (p as { fullName?: string } | null)?.fullName;
+      if (name) setInviterName(name);
     });
   }, []);
 
@@ -87,10 +104,11 @@ export function OnboardingWizard({ onClose, onFinished }: Props) {
       const blocks = await dataService.getBreakGlassBlocks();
       await dataService.saveBreakGlassBlocks({ ...blocks, daily_care: dailyCareText.trim() });
       if (caregiverName.trim() && caregiverEmail.trim()) {
-        await dataService.upsertBreakGlassMember({
+        const member = await dataService.upsertBreakGlassMember({
           block: "daily_care", rank: "primary",
           name: caregiverName.trim(), email: caregiverEmail.trim(),
         });
+        if (member) setDailyCareMember(member);
       }
       setStep(3);
     } catch {
@@ -153,7 +171,16 @@ export function OnboardingWizard({ onClose, onFinished }: Props) {
               onNext={saveDailyCareAndNext}
             />
           )}
-          {step === 3 && <WellDoneStep onFinish={finish} onGoToEmergency={goToEmergency} />}
+          {step === 3 && (
+            <WellDoneStep
+              dailyCareMember={dailyCareMember}
+              childName={childName}
+              inviterName={inviterName}
+              onMemberSaved={setDailyCareMember}
+              onFinish={finish}
+              onGoToEmergency={goToEmergency}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -341,9 +368,131 @@ function DailyCareStep({
   );
 }
 
-// ── Step 3: Well done ─────────────────────────────────────────────────────────
+// ── Step 3: Well done — activate Daily Care by inviting the caregiver ────────
 
-function WellDoneStep({ onFinish, onGoToEmergency }: { onFinish: () => void; onGoToEmergency: () => void }) {
+function ActivateDailyCareCard({
+  member, childName, inviterName, onMemberSaved,
+}: {
+  member: BreakGlassMember | null; childName: string; inviterName: string;
+  onMemberSaved: (m: BreakGlassMember) => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [name, setName] = useState(member?.name ?? "");
+  const [email, setEmail] = useState(member?.email ?? "");
+  const emailValid = /\S+@\S+\.\S+/.test(email);
+
+  async function ensureSaved(): Promise<BreakGlassMember | undefined> {
+    if (member && member.name === name.trim() && member.email === email.trim()) return member;
+    const m = (await dataService.upsertBreakGlassMember({
+      block: "daily_care", rank: "primary", name: name.trim(), email: email.trim(),
+    })) ?? undefined;
+    if (m) onMemberSaved(m);
+    return m;
+  }
+
+  async function sendVia(provider: EmailProvider) {
+    if (!emailValid) { toast.error("Add the caregiver's email first."); return; }
+    setMenuOpen(false);
+    setBusy(true);
+    const m = await ensureSaved();
+    setBusy(false);
+    if (!m?.accessToken) { toast.error("Could not prepare the invite link."); return; }
+
+    const t = buildBreakGlassInviteText(m, inviterName, childName);
+    const providerInfo = EMAIL_PROVIDERS.find(p => p.key === provider)!;
+    const { copied } = await sendViaProvider(provider, t, t.link);
+    toast.success(
+      providerInfo.opensNewTab
+        ? `Opening ${providerInfo.label} with the invite ready to send…`
+        : copied ? "Opening your default email app… link also copied." : "Opening your default email app…",
+      { duration: 4000 },
+    );
+    if (m.status === "draft") {
+      const ok = await dataService.markBreakGlassInviteSent(m.id);
+      if (ok) onMemberSaved({ ...m, status: "invited" });
+    }
+  }
+
+  async function copyLink() {
+    setBusy(true);
+    const m = await ensureSaved();
+    setBusy(false);
+    if (!m?.accessToken) { toast.error("Add the caregiver's name and email first."); return; }
+    const link = `${window.location.origin}/accept/${m.accessToken}`;
+    const ok = await copyToClipboard(link);
+    if (ok) toast.success("Invite link copied.");
+    else toast.error(`Could not copy automatically. Link: ${link}`);
+  }
+
+  const statusLabel = member?.status === "accepted"
+    ? { text: "Accepted — Daily Care is active", cls: "text-green-700", Icon: CheckCircle2 }
+    : member?.status === "invited"
+      ? { text: "Invite sent — waiting for them to accept", cls: "text-amber-700", Icon: Clock }
+      : null;
+
+  return (
+    <div className="rounded-2xl border-2 border-rose-200 bg-rose-50/40 p-5 text-left space-y-3">
+      <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+        <Heart className="h-4 w-4 text-rose-500" /> Activate Daily Care
+      </p>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Daily Care isn't active until your named caregiver accepts. Send them an email, or copy the link and
+        share it however you like (WhatsApp, SMS). The moment they accept, Daily Care turns on.
+      </p>
+
+      {statusLabel && (
+        <div className={`flex items-center gap-1.5 text-xs font-semibold ${statusLabel.cls}`}>
+          <statusLabel.Icon className="h-3.5 w-3.5" /> {statusLabel.text}
+        </div>
+      )}
+
+      {member?.status !== "accepted" && (
+        <>
+          {!member && (
+            <div className="grid sm:grid-cols-2 gap-2">
+              <input className={INPUT.replace("py-3", "py-2.5")} placeholder="Caregiver's name" value={name} onChange={e => setName(e.target.value)} />
+              <input className={INPUT.replace("py-3", "py-2.5")} placeholder="Caregiver's email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+            </div>
+          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <button onClick={() => setMenuOpen(o => !o)} disabled={busy || !emailValid}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-xs font-semibold hover:bg-primary/90 disabled:opacity-50">
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
+                {member?.status === "invited" ? "Re-send invite" : "Send invite"}
+                <ChevronDown className="h-3 w-3" />
+              </button>
+              {menuOpen && (
+                <div className="absolute z-20 top-full left-0 mt-1 w-44 rounded-lg border border-border bg-card shadow-lg overflow-hidden">
+                  {EMAIL_PROVIDERS.map(p => (
+                    <button key={p.key} onClick={() => sendVia(p.key)}
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2 text-xs text-left hover:bg-surface-low transition-colors">
+                      <span>{p.label}</span>
+                      {p.opensNewTab ? <ExternalLink className="h-3 w-3 text-muted-foreground" /> : <Smartphone className="h-3 w-3 text-muted-foreground" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button onClick={copyLink} disabled={busy}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface-low disabled:opacity-50">
+              <Copy className="h-3.5 w-3.5" /> Copy link
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function WellDoneStep({
+  dailyCareMember, childName, inviterName, onMemberSaved, onFinish, onGoToEmergency,
+}: {
+  dailyCareMember: BreakGlassMember | null; childName: string; inviterName: string;
+  onMemberSaved: (m: BreakGlassMember) => void;
+  onFinish: () => void; onGoToEmergency: () => void;
+}) {
   return (
     <div className="text-center space-y-5 pt-2">
       <div className="h-16 w-16 rounded-2xl bg-green-50 flex items-center justify-center mx-auto">
@@ -356,6 +505,13 @@ function WellDoneStep({ onFinish, onGoToEmergency }: { onFinish: () => void; onG
           what to do, even on the hardest day.
         </p>
       </div>
+
+      <ActivateDailyCareCard
+        member={dailyCareMember}
+        childName={childName}
+        inviterName={inviterName}
+        onMemberSaved={onMemberSaved}
+      />
 
       <div className="rounded-2xl bg-surface-low border border-border p-5 text-left space-y-4">
         <div>
